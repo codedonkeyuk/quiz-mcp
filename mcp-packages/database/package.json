@@ -1,0 +1,16 @@
+{
+  "name": "@mcp-packages/database",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "node --experimental-strip-types --experimental-test-module-mocks --test \"**/*.test.ts\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "kysely": "^0.29.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0"
+  }
+}

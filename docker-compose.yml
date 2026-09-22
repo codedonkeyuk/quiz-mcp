@@ -1,0 +1,17 @@
+services:
+  ts-mcp-tools:
+    image: node:26-alpine
+    container_name: ts-mcp-tools
+    restart: always
+    working_dir: /app
+    volumes:
+      - .:/app:ro
+      - ./data:/app/data
+    command: ["node", "src/index.ts"]
+    networks:
+      - mcp_network
+
+networks:
+  mcp_network:
+    external: true
+    name: mcp-tools-net

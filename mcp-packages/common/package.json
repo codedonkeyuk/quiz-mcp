@@ -1,0 +1,13 @@
+{
+  "name": "@mcp-packages/common",
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --experimental-test-module-mocks --test \"**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.1"
+  }
+}

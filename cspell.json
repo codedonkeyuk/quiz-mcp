@@ -1,0 +1,11 @@
+{
+  "version": "0.2",
+  "language": "en-GB",
+  "words": ["vite", "husky", "cspell", "Kysely"],
+  "languageSettings": [
+    {
+      "languageId": "markdown",
+      "ignoreRegExpList": ["/^\\s*```[\\s\\S]*?^\\s*```/gm"]
+    }
+  ]
+}
