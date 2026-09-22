@@ -1,5 +1,5 @@
 {
-  "name": "@mcp-servers/hello-world",
+  "name": "@mcp-servers/quiz-server",
   "version": "0.0.1",
   "type": "module",
   "exports": {
@@ -9,6 +9,9 @@
     "test": "node --experimental-strip-types --experimental-test-module-mocks --test \"**/*.test.ts\""
   },
   "dependencies": {
-    "@mcp-packages/common": "*"
+    "@mcp-packages/common": "*",
+    "rss-parser": "^3.13.0",
+    "@mcp-packages/database": "*",
+    "kysely": "^0.29.6"
   }
 }

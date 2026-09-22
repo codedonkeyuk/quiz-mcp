@@ -1,16 +1,16 @@
 import { McpServer, createMcpHandler } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
-import registerHelloWorld from "@mcp-servers/hello-world";
+import registerQuiz from "../mcp-servers/quiz-server/src/index.ts";
 
 import express, { type Request, type Response } from "express";
 
 function createServer() {
   const server = new McpServer({
-    name: "ts-mcp-tools-server",
+    name: "quiz-mcp-server",
     version: "0.0.1",
   });
 
-  registerHelloWorld(server);
+  registerQuiz(server);
 
   return server;
 }

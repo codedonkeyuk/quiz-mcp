@@ -1,7 +1,7 @@
 {
-  "name": "ts-mcp-tools",
+  "name": "quiz-mcp",
   "version": "0.0.1",
-  "description": "A simple ts library for use as a template",
+  "description": "A MCP that will help you quiz your knowledge on selected topics",
   "license": "MIT",
   "author": "Leigh",
   "type": "module",
