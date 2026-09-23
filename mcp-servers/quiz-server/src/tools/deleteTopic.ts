@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { deleteTopic } from "../database/quizDb.ts"; // Adjust path
+import { deleteTopic, quizDb } from "../database/quizDb.ts"; // Adjust path
 
 const deleteTopicSchema = z.object({
   id: z
@@ -16,10 +16,9 @@ export const deleteTopicTool = {
 
   execute: wrapExecution<z.infer<typeof deleteTopicSchema>>(
     "delete-topic",
-    async ({ id, ctx }: any) => {
-      const db = ctx.db;
-
+    async ({ id }: any) => {
       try {
+        const db = await quizDb();
         await deleteTopic(db, id);
 
         return JSON.stringify({
@@ -35,5 +34,5 @@ export const deleteTopicTool = {
         });
       }
     },
-  ) as (args: any, ctx: any) => Promise<any>,
+  ) as (args: any) => Promise<any>,
 };

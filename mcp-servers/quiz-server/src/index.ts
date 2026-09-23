@@ -3,15 +3,6 @@ import { generateNewTestTool } from "./tools/generateNewTest.ts";
 import { submitTestAnswersTool } from "./tools/submitTestAnswers.ts";
 import { createTopicTool } from "./tools/createTopic.ts";
 import { deleteTopicTool } from "./tools/deleteTopic.ts";
-import { quizDb } from "./database/quizDb.ts";
-
-let dbInstanceInstance: any = null;
-async function getDatabaseConnection() {
-  if (!dbInstanceInstance) {
-    dbInstanceInstance = await quizDb();
-  }
-  return dbInstanceInstance;
-}
 
 export default function registerQuiz(server: McpServer) {
   server.registerTool(
@@ -20,10 +11,8 @@ export default function registerQuiz(server: McpServer) {
       description: createTopicTool.description,
       inputSchema: createTopicTool.schema,
     },
-    async (args, extra) => {
-      const dbInstance = await getDatabaseConnection();
-      const ctx = { ...extra, db: dbInstance };
-      return await createTopicTool.execute(args, ctx);
+    async (args) => {
+      return await createTopicTool.execute(args);
     },
   );
 
@@ -33,10 +22,8 @@ export default function registerQuiz(server: McpServer) {
       description: deleteTopicTool.description,
       inputSchema: deleteTopicTool.schema,
     },
-    async (args, extra) => {
-      const dbInstance = await getDatabaseConnection();
-      const ctx = { ...extra, db: dbInstance };
-      return await deleteTopicTool.execute(args, ctx);
+    async (args) => {
+      return await deleteTopicTool.execute(args);
     },
   );
 
@@ -46,10 +33,8 @@ export default function registerQuiz(server: McpServer) {
       description: generateNewTestTool.description,
       inputSchema: generateNewTestTool.schema,
     },
-    async (args, extra) => {
-      const dbInstance = await getDatabaseConnection();
-      const ctx = { ...extra, db: dbInstance };
-      return await generateNewTestTool.execute(args, ctx);
+    async (args) => {
+      return await generateNewTestTool.execute(args);
     },
   );
 
@@ -59,10 +44,8 @@ export default function registerQuiz(server: McpServer) {
       description: submitTestAnswersTool.description,
       inputSchema: submitTestAnswersTool.schema,
     },
-    async (args, extra) => {
-      const dbInstance = await getDatabaseConnection();
-      const ctx = { ...extra, db: dbInstance };
-      return await submitTestAnswersTool.execute(args, ctx);
+    async (args) => {
+      return await submitTestAnswersTool.execute(args);
     },
   );
 

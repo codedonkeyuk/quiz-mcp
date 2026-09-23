@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { submitTestAnswers } from "../database/quizDb.ts"; // Adjust path
+import { quizDb, submitTestAnswers } from "../database/quizDb.ts"; // Adjust path
 
 const submitAnswersSchema = z.object({
   test_id: z.number().describe("The unique ID of the test being completed"),
@@ -29,15 +29,24 @@ export const submitTestAnswersTool = {
 
   execute: wrapExecution<z.infer<typeof submitAnswersSchema>>(
     "submit-test-answers",
-    async ({ test_id, answers, ctx }: any) => {
-      const db = ctx.db;
+    async ({ test_id, answers }: any) => {
+      try {
+        const db = await quizDb();
 
-      await submitTestAnswers(db, { test_id, answers });
+        await submitTestAnswers(db, { test_id, answers });
 
-      return JSON.stringify({
-        success: true,
-        message: "All answers have been successfully tracked and recorded.",
-      });
+        return JSON.stringify({
+          success: true,
+          message: "All answers have been successfully tracked and recorded.",
+        });
+      } catch (error: any) {
+        return JSON.stringify({
+          success: false,
+          error:
+            error.message ||
+            "An unexpected error occurred while submitting test.",
+        });
+      }
     },
-  ) as (args: any, ctx: any) => Promise<any>,
+  ) as (args: any) => Promise<any>,
 };

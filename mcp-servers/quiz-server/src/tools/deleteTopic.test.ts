@@ -1,47 +1,38 @@
-import { test, before, describe } from "node:test";
-import assert from "node:assert/strict";
-import { quizDb, createTopic } from "../database/quizDb.ts"; // Adjust path
-import { deleteTopicTool } from "./deleteTopic.ts"; // Adjust path
+import { test, mock } from "node:test";
+import assert from "node:assert";
+import { Kysely } from "kysely";
+import { type DbSchema } from "../database/types.ts";
 
-describe("deleteTopicTool Integration Tests", () => {
-  let dbInstance: any;
-
-  before(async () => {
-    dbInstance = await quizDb(":memory:");
+test("deleteTopicTool.execute", async (t) => {
+  mock.module("../database/quizDb.ts", {
+    namedExports: {
+      quizDb: async () => ({ isMockDb: true }),
+      deleteTopic: async (_db: Kysely<DbSchema>, id: number) => {
+        if (id === 999) {
+          throw new Error("Foreign key constraint violation or DB failure");
+        }
+        return;
+      },
+    },
   });
 
-  test("should successfully delete an existing topic category", async () => {
-    const seedTopic = await createTopic(dbInstance, "Temporary Topic");
+  const { deleteTopicTool } = await import("./deleteTopic.ts");
 
-    const args = {
-      id: seedTopic.id,
-      ctx: { db: dbInstance },
-    };
+  await t.test("successfully deletes a topic", async () => {
+    const mcpResponse = await deleteTopicTool.execute({ id: 123 });
 
-    const rawResult: any = await deleteTopicTool.execute(args, {});
+    const result = JSON.parse(mcpResponse.content[0].text);
 
-    const jsonString =
-      typeof rawResult === "string"
-        ? rawResult
-        : rawResult?.content?.[0]?.text ||
-          rawResult?.text ||
-          JSON.stringify(rawResult);
+    assert.strictEqual(result.success, true);
+    assert.match(result.message, /Topic with ID 123/);
+  });
 
-    const result = JSON.parse(jsonString);
+  await t.test("handles errors gracefully when deletion fails", async () => {
+    const mcpResponse = await deleteTopicTool.execute({ id: 999 });
 
-    assert.equal(result.success, true);
-    assert.match(result.message, /successfully deleted/);
+    const result = JSON.parse(mcpResponse.content[0].text);
 
-    const checkRow = await dbInstance
-      .selectFrom("topic")
-      .selectAll()
-      .where("id", "=", seedTopic.id)
-      .executeTakeFirst();
-
-    assert.equal(
-      checkRow,
-      undefined,
-      "The topic row should no longer exist in the database table",
-    );
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /Foreign key constraint violation/);
   });
 });

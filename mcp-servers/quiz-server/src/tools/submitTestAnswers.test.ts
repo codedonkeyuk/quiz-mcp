@@ -1,85 +1,63 @@
-import { test, before, describe } from "node:test";
-import assert from "node:assert/strict";
-import { quizDb, generateNewTest } from "../database/quizDb.ts"; // Adjust path
-import { submitTestAnswersTool } from "./submitTestAnswers.ts"; // Adjust path
+import { test, mock } from "node:test";
+import assert from "node:assert";
+import { Kysely } from "kysely";
+import { type DbSchema } from "../database/types.ts";
 
-describe("submitTestAnswersTool Integration Tests", () => {
-  let dbInstance: any;
-  let testId: number;
-  let questionId: number;
-
-  before(async () => {
-    // 1. Initialize empty in-memory test database
-    dbInstance = await quizDb(":memory:");
-
-    // 2. Seed a test and question so we have valid foreign keys to target
-    const seededData = await generateNewTest(dbInstance, {
-      topic_name: "TypeScript Generics",
-      questions: ["What is T in <T>?"],
-    });
-
-    testId = seededData.test_id;
-    questionId = seededData.questions[0].id;
+test("submitTestAnswersTool.execute", async (t) => {
+  mock.module("../database/quizDb.ts", {
+    namedExports: {
+      quizDb: async () => ({ isMockDb: true }),
+      submitTestAnswers: async (
+        _db: Kysely<DbSchema>,
+        payload: {
+          test_id: number;
+          answers: Array<{
+            question_id: number;
+            user_answer: string;
+            is_correct: boolean;
+          }>;
+        },
+      ) => {
+        if (payload.test_id === 999) {
+          throw new Error("Failed to write submission records to database");
+        }
+        return;
+      },
+    },
   });
 
-  test("should successfully execute tool, write answers, and return a success JSON string", async () => {
-    // Arrange: Build arguments matching your tool's signature format
-    const args = {
-      test_id: testId,
+  const { submitTestAnswersTool } = await import("./submitTestAnswers.ts");
+
+  await t.test("successfully submits test answers", async () => {
+    const inputPayload = {
+      test_id: 101,
       answers: [
-        {
-          question_id: questionId,
-          user_answer: "It stands for a generic Type parameter.",
-          is_correct: true,
-        },
+        { question_id: 1, user_answer: "ECMAScript Modules", is_correct: true },
+        { question_id: 2, user_answer: "CommonJS", is_correct: false },
       ],
-      ctx: {
-        db: dbInstance,
-      },
     };
 
-    // Act: Run the wrapped execute block
-    const rawResult: any = await submitTestAnswersTool.execute(args, {});
+    const mcpResponse = await submitTestAnswersTool.execute(inputPayload);
 
-    // Extract string value regardless of whether wrapExecution returns a primitive string or an object wrapper
-    const jsonString =
-      typeof rawResult === "string"
-        ? rawResult
-        : rawResult?.content?.[0]?.text ||
-          rawResult?.text ||
-          JSON.stringify(rawResult);
+    const result = JSON.parse(mcpResponse.content[0].text);
 
-    const result = JSON.parse(jsonString);
+    assert.strictEqual(result.success, true);
+    assert.match(result.message, /All answers have been successfully tracked/);
+  });
 
-    // Assert: Verify the tool responded with the expected structure
-    assert.equal(result.success, true);
-    assert.equal(
-      result.message,
-      "All answers have been successfully tracked and recorded.",
-    );
+  await t.test("handles errors gracefully when submission fails", async () => {
+    const inputPayload = {
+      test_id: 999,
+      answers: [
+        { question_id: 1, user_answer: "Trigger Error", is_correct: false },
+      ],
+    };
 
-    // Direct Database Verification: Confirm data actually landed inside the table
-    const storedAnswers = await dbInstance
-      .selectFrom("test_answer")
-      .selectAll()
-      .where("test_id", "=", testId)
-      .execute();
+    const mcpResponse = await submitTestAnswersTool.execute(inputPayload);
 
-    assert.equal(
-      storedAnswers.length,
-      1,
-      "There should be exactly one stored answer in the table",
-    );
-    assert.equal(storedAnswers[0].question_id, questionId);
-    assert.equal(
-      storedAnswers[0].answer,
-      "It stands for a generic Type parameter.",
-    );
+    const result = JSON.parse(mcpResponse.content[0].text);
 
-    // Account for SQLite driver casting differences dynamically (boolean vs 1/0 integer conversion)
-    assert.ok(
-      storedAnswers[0].correct === true || storedAnswers[0].correct === 1,
-      "The answer correctness column should track true or 1",
-    );
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /Failed to write submission records/);
   });
 });

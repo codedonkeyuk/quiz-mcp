@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { createTopic } from "../database/quizDb.ts"; // Adjust path
+import { createTopic, quizDb } from "../database/quizDb.ts"; // Adjust path
 
 const createTopicSchema = z.object({
   name: z
@@ -19,10 +19,9 @@ export const createTopicTool = {
 
   execute: wrapExecution<z.infer<typeof createTopicSchema>>(
     "create-topic",
-    async ({ name, ctx }: any) => {
-      const db = ctx.db;
-
+    async ({ name }: any) => {
       try {
+        const db = await quizDb();
         const result = await createTopic(db, name);
 
         return JSON.stringify({
@@ -32,7 +31,6 @@ export const createTopicTool = {
           name: result.name,
         });
       } catch (error: any) {
-        // Fallback catch block in case error checking bubbles out of the core helper function
         return JSON.stringify({
           success: false,
           error:
@@ -41,5 +39,5 @@ export const createTopicTool = {
         });
       }
     },
-  ) as (args: any, ctx: any) => Promise<any>,
+  ) as (args: any) => Promise<any>,
 };

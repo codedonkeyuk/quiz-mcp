@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { generateNewTest } from "../database/quizDb.ts";
+import { generateNewTest, quizDb } from "../database/quizDb.ts";
 
 const generateTestSchema = z.object({
   topic_name: z
@@ -23,18 +23,27 @@ export const generateNewTestTool = {
 
   execute: wrapExecution<z.infer<typeof generateTestSchema>>(
     "generate-new-test",
-    async ({ topic_name, questions, ctx }: any) => {
-      const db = ctx.db;
+    async ({ topic_name, questions }: any) => {
+      try {
+        const db = await quizDb();
 
-      const result = await generateNewTest(db, { topic_name, questions });
+        const result = await generateNewTest(db, { topic_name, questions });
 
-      return JSON.stringify({
-        message:
-          "Test created successfully. Please present these questions to the user.",
-        test_id: result.test_id,
-        topic_id: result.topic_id,
-        questions: result.questions,
-      });
+        return JSON.stringify({
+          message:
+            "Test created successfully. Please present these questions to the user.",
+          test_id: result.test_id,
+          topic_id: result.topic_id,
+          questions: result.questions,
+        });
+      } catch (error: any) {
+        return JSON.stringify({
+          success: false,
+          error:
+            error.message ||
+            "An unexpected error occurred while generating test.",
+        });
+      }
     },
-  ) as (args: any, ctx: any) => Promise<any>,
+  ) as (args: any) => Promise<any>,
 };

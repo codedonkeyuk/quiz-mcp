@@ -1,58 +1,62 @@
-import { test, before, describe } from "node:test";
-import assert from "node:assert/strict";
-import { quizDb } from "../database/quizDb.ts";
-import { generateNewTestTool } from "./generateNewTest.ts";
+import { test, mock } from "node:test";
+import assert from "node:assert";
+import { Kysely } from "kysely";
+import { type DbSchema } from "../database/types.ts";
 
-describe("generateNewTestTool Integration Tests", () => {
-  let dbInstance: any;
+test("generateNewTestTool.execute", async (t) => {
+  mock.module("../database/quizDb.ts", {
+    namedExports: {
+      quizDb: async () => ({ isMockDb: true }),
+      generateNewTest: async (
+        _db: Kysely<DbSchema>,
+        payload: { topic_name: string; questions: string[] },
+      ) => {
+        if (payload.topic_name === "Trigger Error") {
+          throw new Error("Failed to insert test records into database");
+        }
 
-  before(async () => {
-    dbInstance = await quizDb(":memory:");
+        return {
+          test_id: "test-abc-123",
+          topic_id: "topic-xyz-789",
+          questions: payload.questions.map((q, idx) => ({
+            id: `q-${idx}`,
+            text: q,
+          })),
+        };
+      },
+    },
   });
 
-  test("should successfully execute tool, write payload to database, and return formatted JSON string", async () => {
-    const args = {
-      topic_name: "Docker Basics",
-      questions: [
-        "What is the difference between an image and a container?",
-        "How do you expose a port in a Dockerfile?",
-      ],
-      ctx: {
-        db: dbInstance,
-      },
+  const { generateNewTestTool } = await import("./generateNewTest.ts");
+
+  await t.test("successfully generates a new test", async () => {
+    const inputPayload = {
+      topic_name: "TypeScript Basics",
+      questions: ["What is a structural type?", "Explain unknown vs any"],
     };
 
-    const rawResult: any = await generateNewTestTool.execute(args, {});
+    const mcpResponse = await generateNewTestTool.execute(inputPayload);
 
-    const jsonString =
-      typeof rawResult === "string"
-        ? rawResult
-        : rawResult?.content?.[0]?.text ||
-          rawResult?.text ||
-          JSON.stringify(rawResult);
+    const result = JSON.parse(mcpResponse.content[0].text);
 
-    const result = JSON.parse(jsonString);
+    assert.match(result.message, /Test created successfully/);
+    assert.strictEqual(result.test_id, "test-abc-123");
+    assert.strictEqual(result.topic_id, "topic-xyz-789");
+    assert.strictEqual(result.questions.length, 2);
+    assert.strictEqual(result.questions[0].text, "What is a structural type?");
+  });
 
-    assert.equal(
-      result.message,
-      "Test created successfully. Please present these questions to the user.",
-    );
-    assert.ok(
-      result.test_id,
-      "Result object should contain a generated test_id",
-    );
-    assert.ok(
-      result.topic_id,
-      "Result object should contain a generated topic_id",
-    );
-    assert.equal(
-      result.questions.length,
-      2,
-      "Should have tracked exactly 2 questions in database",
-    );
-    assert.equal(
-      result.questions[0].question,
-      "What is the difference between an image and a container?",
-    );
+  await t.test("handles errors gracefully when generation fails", async () => {
+    const inputPayload = {
+      topic_name: "Trigger Error",
+      questions: ["Will this fail?"],
+    };
+
+    const mcpResponse = await generateNewTestTool.execute(inputPayload);
+
+    const result = JSON.parse(mcpResponse.content[0].text);
+
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /Failed to insert test records/);
   });
 });

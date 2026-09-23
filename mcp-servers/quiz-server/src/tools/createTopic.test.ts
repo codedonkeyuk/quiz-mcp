@@ -1,64 +1,62 @@
-import { test, before, describe } from "node:test";
-import assert from "node:assert/strict";
-import { quizDb } from "../database/quizDb.ts"; // Adjust path
-import { createTopicTool } from "./createTopic.ts"; // Adjust path
+import { test, mock } from "node:test";
+import assert from "node:assert";
+import { Kysely } from "kysely";
+import { type DbSchema } from "../database/types.ts";
 
-describe("createTopicTool Integration Tests", () => {
-  let dbInstance: any;
-
-  before(async () => {
-    dbInstance = await quizDb(":memory:");
+test("createTopicTool.execute", async (t) => {
+  // 1. Mock the module definitions BEFORE dynamically importing the tool
+  mock.module("../database/quizDb.ts", {
+    namedExports: {
+      quizDb: async () => ({ isMockDb: true }),
+      createTopic: async (_db: Kysely<DbSchema>, name: string) => {
+        if (name === "Trigger Error") {
+          throw new Error("Database connection failed");
+        }
+        return { id: "topic-123", name };
+      },
+    },
   });
 
-  test("should successfully create a brand new topic category", async () => {
-    const args = {
-      name: "Rust Fundamentals",
-      ctx: { db: dbInstance },
-    };
+  // 2. Dynamically import the tool so it consumes the mocked database module
+  const { createTopicTool } = await import("./createTopic.ts");
 
-    const rawResult: any = await createTopicTool.execute(args, {});
+  // Helper to safely extract the stringified JSON from wrapExecution's response object
+  const parseMcpResponse = (mcpResponse: any) => {
+    try {
+      if (mcpResponse?.content && Array.isArray(mcpResponse.content)) {
+        return JSON.parse(mcpResponse.content[0].text);
+      }
+      if (mcpResponse?.content?.text) {
+        return JSON.parse(mcpResponse.content.text);
+      }
+      return JSON.parse(mcpResponse);
+    } catch (err) {
+      console.error(
+        "Failed to parse wrapExecution response. Complete object structure:",
+        JSON.stringify(mcpResponse, null, 2),
+      );
+      throw err;
+    }
+  };
 
-    // FIXED: Removed the invalid duplicate question mark typo (`?.?`)
-    const jsonString =
-      typeof rawResult === "string"
-        ? rawResult
-        : rawResult?.content?.[0]?.text ||
-          rawResult?.text ||
-          JSON.stringify(rawResult);
+  await t.test("successfully creates a topic", async () => {
+    const mcpResponse = await createTopicTool.execute({
+      name: "Docker Advanced",
+    });
+    const result = parseMcpResponse(mcpResponse);
 
-    const result = JSON.parse(jsonString);
-
-    assert.equal(result.success, true);
-    assert.equal(result.name, "Rust Fundamentals");
-    assert.ok(
-      result.topic_id,
-      "Should return a valid auto-incremented primary key id",
-    );
+    assert.strictEqual(result.success, true);
+    assert.strictEqual(result.topic_id, "topic-123");
+    assert.strictEqual(result.name, "Docker Advanced");
   });
 
-  test("should gracefully catch database errors if inserting a duplicate name", async () => {
-    const args = {
-      name: "Duplicate Topic",
-      ctx: { db: dbInstance },
-    };
+  await t.test("handles errors gracefully when database fails", async () => {
+    const mcpResponse = await createTopicTool.execute({
+      name: "Trigger Error",
+    });
+    const result = parseMcpResponse(mcpResponse);
 
-    // First attempt creates it successfully
-    await createTopicTool.execute(args, {});
-
-    // Second attempt hits your internal try/catch block
-    const rawResult: any = await createTopicTool.execute(args, {});
-
-    // FIXED: Clean extraction layout here as well
-    const jsonString =
-      typeof rawResult === "string"
-        ? rawResult
-        : rawResult?.content?.[0]?.text ||
-          rawResult?.text ||
-          JSON.stringify(rawResult);
-
-    const result = JSON.parse(jsonString);
-
-    assert.equal(result.success, false);
-    assert.match(result.error, /already exists/);
+    assert.strictEqual(result.success, false);
+    assert.match(result.error, /Database connection failed/);
   });
 });

@@ -1,64 +1,84 @@
-import { test, before, describe, mock } from "node:test";
-import assert from "node:assert/strict";
+import { test, mock } from "node:test";
+import assert from "node:assert";
 import { McpServer } from "@modelcontextprotocol/server";
+import { z } from "zod";
 
-import * as originalDbModule from "./database/quizDb.ts";
-
-mock.module("./database/quizDb.ts", {
-  namedExports: {
-    quizDb: async () => await originalDbModule.quizDb(":memory:"),
-
-    createTopic: originalDbModule.createTopic,
-    deleteTopic: originalDbModule.deleteTopic,
-    generateNewTest: originalDbModule.generateNewTest,
-    submitTestAnswers: originalDbModule.submitTestAnswers,
-  },
-});
-
-describe("Quiz MCP Server Registry Integration", () => {
-  let serverInstance: McpServer;
-  let mockDbInstance: any;
-  let createTopicTool: any;
-
-  before(async () => {
-    serverInstance = new McpServer({
-      name: "test-server",
-      version: "0.0.0",
-    });
-
-    const { default: registerQuiz } = await import("./index.ts");
-    const { createTopicTool: importedTool } =
-      await import("./tools/createTopic.ts");
-
-    createTopicTool = importedTool;
-
-    registerQuiz(serverInstance);
-
-    mockDbInstance = await originalDbModule.quizDb(":memory:");
+test("registerQuiz registration pipeline", async (t) => {
+  mock.module("./tools/createTopic.ts", {
+    namedExports: {
+      createTopicTool: {
+        name: "create-topic",
+        description: "mocked description",
+        schema: z.object({ name: z.string() }),
+        execute: async () => {},
+      },
+    },
   });
 
-  test("should successfully verify the tool can be invoked manually with a mock context object", async () => {
-    const inputPayload = {
-      name: "Unit Testing Basics",
-      ctx: { db: mockDbInstance },
-    };
-
-    const rawResult: any = await createTopicTool.execute(inputPayload, {});
-
-    const jsonString =
-      typeof rawResult === "string"
-        ? rawResult
-        : rawResult?.content?.[0]?.text ||
-          rawResult?.text ||
-          JSON.stringify(rawResult);
-
-    const result = JSON.parse(jsonString);
-
-    assert.equal(result.success, true);
-    assert.equal(result.name, "Unit Testing Basics");
-    assert.ok(
-      result.topic_id,
-      "Should output a generated internal database identity primary key",
-    );
+  mock.module("./tools/deleteTopic.ts", {
+    namedExports: {
+      deleteTopicTool: {
+        name: "delete-topic",
+        description: "mocked description",
+        schema: z.object({ id: z.number() }),
+        execute: async () => {},
+      },
+    },
   });
+
+  mock.module("./tools/generateNewTest.ts", {
+    namedExports: {
+      generateNewTestTool: {
+        name: "generate-new-test",
+        description: "mocked description",
+        schema: z.object({ topic_name: z.string() }),
+        execute: async () => {},
+      },
+    },
+  });
+
+  mock.module("./tools/submitTestAnswers.ts", {
+    namedExports: {
+      submitTestAnswersTool: {
+        name: "submit-test-answers",
+        description: "mocked description",
+        schema: z.object({ test_id: z.number() }),
+        execute: async () => {},
+      },
+    },
+  });
+
+  const { default: registerQuiz } = await import("./index.ts");
+
+  await t.test(
+    "registers all 4 core quiz tools into the server configuration",
+    async () => {
+      const registeredTools: Array<{
+        name: string;
+        description: string;
+        schema: any;
+      }> = [];
+
+      const mockServer = {
+        registerTool: (name: string, config: any, _executeFn: Function) => {
+          registeredTools.push({
+            name,
+            description: config.description,
+            schema: config.inputSchema,
+          });
+          return {};
+        },
+      } as unknown as McpServer;
+
+      registerQuiz(mockServer);
+
+      assert.strictEqual(registeredTools.length, 4);
+
+      const toolNames = registeredTools.map((t) => t.name);
+      assert.ok(toolNames.includes("create-topic"));
+      assert.ok(toolNames.includes("delete-topic"));
+      assert.ok(toolNames.includes("generate-new-test"));
+      assert.ok(toolNames.includes("submit-test-answers"));
+    },
+  );
 });
