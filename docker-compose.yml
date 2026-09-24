@@ -1,5 +1,5 @@
 services:
-  quiz-tools:
+  quiz-mcp:
     image: node:26-alpine
     container_name: quiz-mcp
     restart: always
