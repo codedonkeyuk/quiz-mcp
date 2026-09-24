@@ -5,6 +5,33 @@ on:
       - main
 
 jobs:
+  test:
+    name: Execute Node Native Tests
+    runs-on: ubuntu-latest # Isolated runner container, NOT your debian host
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26" # Explicitly using Node 26 for native node:test
+
+      - name: Create Report Directory
+        run: mkdir -p test-results
+
+      # Runs native tests entirely within this temporary container environment
+      - name: Run Node Tests
+        run: node --test --test-reporter=junit --test-reporter-destination=test-results/report.xml
+        continue-on-error: true # Prevents pipeline failure from stopping artifact upload
+
+      # Saves the XML report directly to the Gitea UI for you to look at
+      - name: Save Test Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-report
+          path: test-results/report.xml
   deploy:
     runs-on: debian-latest
 
