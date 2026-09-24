@@ -12,7 +12,7 @@ const answerSchema = z.object({
 export const submitTestAnswerTool = {
   name: "submit-test-answer",
   description:
-    "Submits the user's answer for a single question. Returns the next question text. CRITICAL: If the quiz is completed, this tool returns a final scorecard. The LLM must output this scorecard verbatim to the user without altering the numbers or text formatting.",
+    "Submits the user's answer for a single question. Instantly returns the next question text, or presents the final scorecard if the quiz is completed.",
   schema: answerSchema,
 
   execute: wrapExecution<z.infer<typeof answerSchema>>(
@@ -36,7 +36,7 @@ export const submitTestAnswerTool = {
             content: [
               {
                 type: "text",
-                text: `You have completed the quiz!\n\nFinal Scorecard:\n- Correct Answers: ${score.correct} / ${score.total}\n- Score: ${score.percentage}%\n\n`,
+                text: `You have completed the quiz!\n\nFinal Scorecard:\n- Correct Answers: ${score.correct} / ${score.total}\n- Score: ${score.percentage}%\n\nProvide a brief summary review of their performance now.`,
               },
             ],
           };
