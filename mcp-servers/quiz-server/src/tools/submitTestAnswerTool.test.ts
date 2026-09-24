@@ -54,13 +54,11 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const mcpResponse = await submitTestAnswerTool.execute(inputPayload);
 
-      const result = JSON.parse(mcpResponse.content[0].text);
+      const textOutput = mcpResponse.content[0].text;
 
-      assert.strictEqual(result.test_complete, false);
-      assert.deepEqual(result.next_question, {
-        id: 2,
-        text: "What does .pipe() do?",
-      });
+      assert.match(textOutput, /\[SYSTEM COMMAND: CONTINUE\]/);
+      assert.match(textOutput, /What does \.pipe\(\) do\?/);
+      assert.match(textOutput, /Question Database ID: 2/);
     },
   );
 
@@ -76,10 +74,10 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const mcpResponse = await submitTestAnswerTool.execute(inputPayload);
 
-      const result = JSON.parse(mcpResponse.content[0].text);
+      const textOutput = mcpResponse.content[0].text;
 
-      assert.strictEqual(result.test_complete, true);
-      assert.strictEqual(result.next_question, null);
+      assert.match(textOutput, /\[SYSTEM COMMAND: TEST_COMPLETE\]/);
+      assert.match(textOutput, /All questions have been completed/);
     },
   );
 
@@ -95,10 +93,10 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const mcpResponse = await submitTestAnswerTool.execute(inputPayload);
 
-      const result = JSON.parse(mcpResponse.content[0].text);
+      const textOutput = mcpResponse.content[0].text;
 
-      assert.strictEqual(result.success, false);
-      assert.match(result.error, /Failed to write single submission record/);
+      assert.match(textOutput, /Error processing answer submission:/);
+      assert.match(textOutput, /Failed to write single submission record/);
     },
   );
 });
