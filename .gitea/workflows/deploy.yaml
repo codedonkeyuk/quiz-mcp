@@ -21,7 +21,7 @@ jobs:
           # Using the '-k' flag tells curl to trust your internal local HTTPS certificate safely
           curl -k -L -H "Authorization: token $GITEA_TOKEN" \
             -o repo.zip \
-            "https://192.168.52"
+            "https://192.168.52.200"
 
           # 3. Extract the contents and clean up the archive file
           unzip -o repo.zip
