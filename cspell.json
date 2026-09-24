@@ -1,7 +1,7 @@
 {
   "version": "0.2",
   "language": "en-GB",
-  "words": ["vite", "husky", "cspell", "Kysely", "LLM"],
+  "words": ["vite", "husky", "cspell", "Kysely", "LLM", "gitea"],
   "languageSettings": [
     {
       "languageId": "markdown",
