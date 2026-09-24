@@ -18,7 +18,7 @@ const generateTestSchema = z.object({
 export const generateNewTestTool = {
   name: "generate-new-test",
   description:
-    "Generates a fresh test with a unique list of questions under a specific topic. Use this to construct a test for the user.",
+    "Generates a fresh test in the database. CRITICAL: Do NOT say 'Question 1:'. Do NOT output any introductory text or greetings. Just output the question itself using the text provided in the next_question field.",
   schema: generateTestSchema,
 
   execute: wrapExecution<z.infer<typeof generateTestSchema>>(
