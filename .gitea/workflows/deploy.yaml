@@ -10,28 +10,23 @@ jobs:
     steps:
       - name: Sync and Restart quiz-mcp Application
         env:
-          # Pulls the secret passphrase securely from Gitea
+          # Pulls only your passphrase from Gitea Secrets
           PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
         run: |
-          # 1. Start the SSH Agent and import your host's SSH key using the passphrase
+          # 1. Start the SSH agent
           eval $(ssh-agent -s)
-          echo "$PASSPHRASE" | mypassword="$PASSPHRASE" expect -c '
-            spawn ssh-add /home/leighgordy/.ssh/id_rsa
-            expect "Enter passphrase for"
-            send "$env(PASSPHRASE)\r"
-            expect eof
-          '
 
-          # 2. Ensure the project folder exists
+          # 2. Unlock your local physical key file using the passphrase secret
+          echo "$PASSPHRASE" | setsid ssh-add ~/.ssh/id_rsa
+
+          # 3. Securely clone or pull using SSH
           mkdir -p ~/gitea-runner-apps/quiz-mcp
           cd ~/gitea-runner-apps/quiz-mcp
 
-          # 3. Use SSH instead of HTTPS to clone/pull the code
           if [ -d ".git" ]; then
             git fetch --all
             git reset --hard origin/main
           else
-            # Uses the standard SSH clone syntax for your local Gitea server
             git clone git@192.168.52.200:leighgordy/quiz-mcp.git .
           fi
 
