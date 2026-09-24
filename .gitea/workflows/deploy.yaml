@@ -22,4 +22,9 @@ jobs:
 
           # Navigate into the workspace and launch your docker apps
           cd ~/apps/quiz-mcp
+
+          # Run npm install on the host so node_modules exists before the container boots!
+          npm install
+
+          # Launch the containers
           docker compose up -d --build --force-recreate
