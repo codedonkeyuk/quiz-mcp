@@ -1,11 +1,32 @@
-# ts-mcp-tools
+# ts-quiz-mcp
 
-This is a starter template for a multi module MCP project, each mcp server module a MCP server in its own right.
+LLMs are great at information retrieval and by extension generating unique quiz questions. This MCP library give LLMs the ability to save the tests and the results. This not only allows you to identify the weak points, it allows you to analyse the results over a long period of time.
 
-Why not have separate MCP servers, orchestration mainly. Tools, prompts and documents can be easily grouped together because they look and behave the same no matter how they are packaged. Why orchestrate 5 packages when you can just have the one.
+As a developer I am used to doing technical tests for interviews. Its never ending!! Something I have threatened to do for years was build a test platform for coders, not companies! Most test platforms charge hundreds of pounds for access, or would not make them accessible to job seekers. This caused a great deal of anxiety for developers, certainly within me. Well the AI gods made a great testing tool called a LLM. Only thing missing is long term memory and a way to track your results, I managed to build that in an afternoon and that is this project!
 
-- **mcp-packages:** Shared modules used by various mcp-servers
-- **mcp-servers:** Each is a MCP server in it own right. Through aggregation they add their own Tools, prompts and documents.
+## Setup
+
+This is a MCP run as an express service. It is made up of native TypeScript, no compilation needed. Most services are docker, so I have included that file in the project, modify how you like. Currently it sets up its own private network, which you will need to add to your LLMs docker service to access.
+
+### Update your LLM docker file
+
+```yml
+...
+services:
+  LLM:
+    ...
+    networks:
+      - default
+      - mcp_network
+...
+networks:
+  mcp_network:
+    external: true
+    name: mcp-tools-net
+...
+```
+
+Simple run it and it should be accessibly to your LLM. SOme LLM have their own unique config. You will need to use their instructions, too many clients!
 
 ## Commands
 
@@ -17,105 +38,3 @@ Why not have separate MCP servers, orchestration mainly. Tools, prompts and docu
 | `npm run clean`    | clean project using prettier                                               |
 | `npm run validate` | validate code using typescript compiler. Does not generate files           |
 | `npm run serve`    | serve MCP locally                                                          |
-
-## Instructions
-
-### Setting up Docker
-
-This project has been designed to be deployed as docker compose container, and is accessible over a network bridge.
-
-To create the bridge issues the following command on your target server.
-
-```
-docker network create mcp-tools-net
-```
-
-Update your main project / LLM client to use that bridge
-
-```
-services:
-  LLMChatService:
-  ...
-  networks:
-    - mcp_network
-...
-...
-networks:
-  mcp_network:
-    external: true
-    name: mcp-tools-net
-```
-
-No ports are exposed in the project as is. To see its alive and running use the following commands
-
-```bash
-docker exec -it ts-mcp-tools wget -qO- http://localhost:3000/ping
-# should return {"status":"ok", "timestamp": "..."}
-
-docker compose logs ts-mcp-tools
-```
-
-### Create a new MCP within project
-
-Create a new package using the following as a package template
-
-```json
-{
-  "name": "@mcp-servers/hello-world",
-  "version": "0.0.1",
-  // type & exports below must be delared that way avoid main. This is how a TS modules are picked up in node
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "test": "node --experimental-strip-types --experimental-test-module-mocks --test \"**/*.test.ts\""
-  },
-  // If you are using any shared packages
-  "dependencies": {
-    "@mcp-packages/common": "*"
-  }
-}
-```
-
-Your index should use a delegate.
-
-```ts
-import { McpServer } from "@modelcontextprotocol/server";
-import { helloWorldTool } from "./tools/hello-world-tool.ts";
-
-export default function registerHelloWorld(server: McpServer) {
-  server.registerTool(
-    helloWorldTool.name,
-    {
-      description: helloWorldTool.description,
-      inputSchema: helloWorldTool.schema,
-    },
-    helloWorldTool.execute,
-  );
-
-  return server;
-}
-```
-
-Then within `src/index.ts` ass the following
-
-```ts
-import registerHelloWorld from "@mcp-servers/hello-world"; // import server
-//...
-
-function createServer() {
-  const server = new McpServer({
-    name: "ts-mcp-tools-server",
-    version: "0.0.1",
-  });
-  // ...
-  registerHelloWorld(server); // apply server
-  // ...
-  return server;
-}
-```
-
-### Setup database
-
-[You can find instructions for that in it own README](./mcp-packages/database/README.md)
