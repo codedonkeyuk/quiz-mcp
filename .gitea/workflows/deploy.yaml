@@ -18,4 +18,5 @@ jobs:
           unzip -o repo.zip
           rm repo.zip
           if [ -d "quiz-mcp" ]; then cp -R ./quiz-mcp/* .; rm -rf ./quiz-mcp; fi
+
           docker compose up -d --force-recreate
