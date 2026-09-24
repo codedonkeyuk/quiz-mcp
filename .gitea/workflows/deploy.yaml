@@ -1,4 +1,4 @@
-name: Deploy Quiz MCP
+name: Deploy Quiz MCP via SSH
 on:
   push:
     branches:
@@ -8,19 +8,32 @@ jobs:
   deploy:
     runs-on: debian-stable
     steps:
-      - name: Check out complete application
-        uses: actions/checkout@v4
-
-      - name: Sync files to runner apps folder and restart
+      - name: Sync and Restart quiz-mcp Application
+        env:
+          # Pulls the secret passphrase securely from Gitea
+          PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
         run: |
-          # 1. Create the project sub-folder automatically if it doesn't exist
+          # 1. Start the SSH Agent and import your host's SSH key using the passphrase
+          eval $(ssh-agent -s)
+          echo "$PASSPHRASE" | mypassword="$PASSPHRASE" expect -c '
+            spawn ssh-add /home/leighgordy/.ssh/id_rsa
+            expect "Enter passphrase for"
+            send "$env(PASSPHRASE)\r"
+            expect eof
+          '
+
+          # 2. Ensure the project folder exists
           mkdir -p ~/gitea-runner-apps/quiz-mcp
+          cd ~/gitea-runner-apps/quiz-mcp
 
-          # 2. Copy the entire checked-out repository over
-          cp -R ./* ~/gitea-runner-apps/quiz-mcp/
+          # 3. Use SSH instead of HTTPS to clone/pull the code
+          if [ -d ".git" ]; then
+            git fetch --all
+            git reset --hard origin/main
+          else
+            # Uses the standard SSH clone syntax for your local Gitea server
+            git clone git@192.168.52.200:leighgordy/quiz-mcp.git .
+          fi
 
-          # 3. Move into the folder
-          cd ~/gitea-runner-apps/quiz-mcp/
-
-          # 4. Restart the container so it runs the new code
+          # 4. Restart the container
           docker compose up -d --force-recreate
