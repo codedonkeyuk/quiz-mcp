@@ -1,4 +1,4 @@
-name: Deploy Quiz MCP via SSH
+name: Deploy Quiz MCP
 on:
   push:
     branches:
@@ -6,29 +6,23 @@ on:
 
 jobs:
   deploy:
-    runs-on: debian-stable
+    runs-on: ubuntu-latest
     steps:
-      - name: Sync and Restart quiz-mcp Application
-        env:
-          # Pulls only your passphrase from Gitea Secrets
-          PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
+      # 1. Automatically fetch the code using Gitea's built-in security token
+      - name: Check out application code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 2. Sync the files and tell the host's Docker engine to restart the app
+      - name: Sync Files and Restart Container
         run: |
-          # 1. Start the SSH agent
-          eval $(ssh-agent -s)
+          # Ensure the project sub-folder exists in your mapped directory
+          mkdir -p /root/gitea-runner-apps/quiz-mcp
 
-          # 2. Unlock your local physical key file using the passphrase secret
-          echo "$PASSPHRASE" | setsid ssh-add ~/.ssh/id_rsa
+          # Copy the code files over
+          cp -R ./* /root/gitea-runner-apps/quiz-mcp/
 
-          # 3. Securely clone or pull using SSH
-          mkdir -p ~/gitea-runner-apps/quiz-mcp
-          cd ~/gitea-runner-apps/quiz-mcp
-
-          if [ -d ".git" ]; then
-            git fetch --all
-            git reset --hard origin/main
-          else
-            git clone git@192.168.52.200:leighgordy/quiz-mcp.git .
-          fi
-
-          # 4. Restart the container
+          # Move into the directory and tell the host's Docker engine to recreate the app
+          cd /root/gitea-runner-apps/quiz-mcp/
           docker compose up -d --force-recreate
