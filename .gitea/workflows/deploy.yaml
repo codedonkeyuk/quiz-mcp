@@ -10,39 +10,6 @@ jobs:
     steps:
       - name: Fetch and Sync Code using Token
         env:
-          # Uses the built-in, short-lived security token provided by Gitea
-          GITEA_TOKEN: ${{ gitea.token }}
-        run: |
-          # 1. Ensure the destination folder exists on your volume mapping
-          mkdir -p /root/gitea-runner-apps/quiz-mcp
-          cd /root/gitea-runner-apps/quiz-mcp
-
-          # 2. Download the project code as a clean zip archive directly from Gitea
-          # Using the '-k' flag tells curl to trust your internal local HTTPS certificate safely
-          curl -k -L -H "Authorization: token $GITEA_TOKEN" \
-            -o repo.zip \
-            "https://192.168.52.200/leighgordy/quiz-mcp/archive/main.zip?token=$GITEA_TOKEN"
-
-          # 3. Extract the contents and clean up the archive file
-          unzip -o repo.zip
-          rm repo.zip
-
-          # 4. Move down out of the archive wrapper if Gitea nested it, then restart
-          # (If your files extract directly into the folder, you can keep this standard restart)
-          docker compose up -d --force-recreate
-
-name: Deploy Quiz MCP
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fetch and Sync Code using Token
-        env:
           GITEA_TOKEN: ${{ gitea.token }}
         run: |
           mkdir -p /root/gitea-runner-apps/quiz-mcp
