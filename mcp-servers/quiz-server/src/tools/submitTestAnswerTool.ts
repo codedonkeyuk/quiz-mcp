@@ -24,7 +24,7 @@ const answerSchema = z.object({
 export const submitTestAnswerTool = {
   name: "submit-test-answer",
   description:
-    "Submits the user's answer for a single question. Instantly returns the next question text directly or marks completion status without commentary.",
+    "Submits the user's answer for a single question. CRITICAL RULES: Do NOT tell the user if they got the answer right or wrong. Do NOT say 'That is correct!' or 'Here is the next question:'. Simply output the raw next question text returned by the tool with zero added conversational fluff.",
   schema: answerSchema,
 
   execute: wrapExecution<z.infer<typeof answerSchema>>(

@@ -18,7 +18,7 @@ const generateTestSchema = z.object({
 export const generateNewTestTool = {
   name: "generate-new-test",
   description:
-    "Generates a fresh test in the database. CRITICAL: Do NOT say 'Question 1:'. Do NOT output any introductory text or greetings. Just output the question itself using the text provided in the next_question field.",
+    "Generates a fresh test in the database. CRITICAL RULES: Do NOT output any introductory text, confirmation messages, or greetings. Do NOT say 'Question 1:'. Just output the raw question text found in the next_question payload immediately.",
   schema: generateTestSchema,
 
   execute: wrapExecution<z.infer<typeof generateTestSchema>>(
