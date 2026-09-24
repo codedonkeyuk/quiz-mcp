@@ -56,9 +56,8 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const textOutput = mcpResponse.content[0].text;
 
-      assert.match(textOutput, /\[SYSTEM COMMAND: CONTINUE\]/);
+      // Updated to match the prefix-free raw question string format
       assert.match(textOutput, /What does \.pipe\(\) do\?/);
-      assert.match(textOutput, /Question Database ID: 2/);
     },
   );
 
@@ -76,8 +75,9 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const textOutput = mcpResponse.content[0].text;
 
-      assert.match(textOutput, /\[SYSTEM COMMAND: TEST_COMPLETE\]/);
-      assert.match(textOutput, /All questions have been completed/);
+      // Updated to match the new final step text string layout
+      assert.match(textOutput, /Test complete/);
+      assert.match(textOutput, /Summarise the results/);
     },
   );
 

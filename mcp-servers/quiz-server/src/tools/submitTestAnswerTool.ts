@@ -24,7 +24,7 @@ const answerSchema = z.object({
 export const submitTestAnswerTool = {
   name: "submit-test-answer",
   description:
-    "Submits the user's answer for a single question. It returns instructions on what question to print out next or flags if the test is completed.",
+    "Submits the user's answer for a single question. Instantly returns the next question text directly or marks completion status without commentary.",
   schema: answerSchema,
 
   execute: wrapExecution<z.infer<typeof answerSchema>>(
@@ -33,7 +33,6 @@ export const submitTestAnswerTool = {
       try {
         const db = await quizDb();
 
-        // 1. Run the database transaction to pull down the next state object
         const result = await submitAnswer(db, {
           test_id,
           question_id,
@@ -41,24 +40,24 @@ export const submitTestAnswerTool = {
           is_correct,
         });
 
+        // If test is complete, return standard payload markers to break loop natively
         if (result.test_complete || !result.next_question) {
           return {
             content: [
               {
                 type: "text",
-                text: `[SYSTEM COMMAND: TEST_COMPLETE] All questions have been completed and successfully written to the database. Present a concluding summary message to the user now.`,
+                text: "Test complete. Summarise the results and calculate the final score for the user now.",
               },
             ],
           };
         }
 
-        const nextQ = result.next_question;
-
+        // Return clean plaintext question string without custom system command brackets
         return {
           content: [
             {
               type: "text",
-              text: `[SYSTEM COMMAND: CONTINUE] Answer recorded. You must immediately state this question to the user next: "${nextQ.text}" (Question Database ID: ${nextQ.id}). Do not give any hints or commentary on their previous answer.`,
+              text: result.next_question.text,
             },
           ],
         };
@@ -70,7 +69,6 @@ export const submitTestAnswerTool = {
               text: `Error processing answer submission: ${error.message || "Unknown execution error"}`,
             },
           ],
-          isError: true,
         };
       }
     },
