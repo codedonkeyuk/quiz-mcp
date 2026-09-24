@@ -6,17 +6,20 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fetch and Sync Code using Token
-        env:
-          GITEA_TOKEN: ${{ gitea.token }}
-        run: |
-          mkdir -p /root/gitea-runner-apps/quiz-mcp
-          cd /root/gitea-runner-apps/quiz-mcp
-          curl -k -L -o repo.zip "https://192.168.52.200:3001/leighgordy/quiz-mcp/archive/main.zip?token=$GITEA_TOKEN"
-          unzip -o repo.zip
-          rm repo.zip
-          if [ -d "quiz-mcp" ]; then cp -R ./quiz-mcp/* .; rm -rf ./quiz-mcp; fi
+    runs-on: debian-latest
 
-          docker compose up -d --force-recreate
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sync and Deploy Docker App
+        run: |
+          # Create your centralized workspace folder for this specific app
+          mkdir -p ~/apps/quiz-mcp
+
+          # Safely copy the repository files into the app directory
+          rsync -avz --delete ./ ~/apps/quiz-mcp/
+
+          # Navigate into the workspace and launch your docker apps
+          cd ~/apps/quiz-mcp
+          docker compose up -d --build --force-recreate
