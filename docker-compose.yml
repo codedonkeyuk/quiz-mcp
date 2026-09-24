@@ -9,7 +9,9 @@ services:
       - ./data:/app/data
     command: ["node", "src/index.ts"]
     networks:
-      - mcp_network
+      mcp_network:
+        aliases:
+          - local-mcp-tools
 
 networks:
   mcp_network:
