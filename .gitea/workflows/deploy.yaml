@@ -6,14 +6,14 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: debian-stable
     steps:
       - name: Fetch and Sync Code using Token
         env:
           GITEA_TOKEN: ${{ gitea.token }}
         run: |
-          mkdir -p /root/gitea-runner-apps/quiz-mcp
-          cd /root/gitea-runner-apps/quiz-mcp
+          mkdir -p /home/leighgordy/gitea-runner-apps/quiz-mcp
+          cd /home/leighgordy/gitea-runner-apps/quiz-mcp
           curl -k -L -o repo.zip "https://192.168.52.200:3001/leighgordy/quiz-mcp/archive/main.zip?token=$GITEA_TOKEN"
           unzip -o repo.zip
           rm repo.zip
