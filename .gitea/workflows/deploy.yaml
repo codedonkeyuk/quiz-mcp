@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  run-tests:
+  test:
     name: Execute Node Native Tests Locally
     runs-on: debian-latest
 
@@ -15,9 +15,6 @@ jobs:
 
       - name: Create Report Directory
         run: mkdir -p test-results
-
-      # The "|| true" forces the runner to ignore the empty terminal exit code
-      # since the actual XML report writes successfully.
       - name: Run Node Tests Instantly
         run: |
           node --test --test-reporter=junit --test-reporter-destination=test-results/report.xml || true
