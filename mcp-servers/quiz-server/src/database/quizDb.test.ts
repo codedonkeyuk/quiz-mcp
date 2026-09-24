@@ -5,7 +5,7 @@ import {
   createTopic,
   deleteTopic,
   generateNewTest,
-  submitTestAnswers,
+  submitAnswer,
 } from "./quizDb.ts";
 
 describe("Quiz Database Suite", () => {
@@ -30,12 +30,13 @@ describe("Quiz Database Suite", () => {
     }, /A topic with the name "Unique Topic" already exists\./);
   });
 
-  test("should handle the complete test lifecycle (generation to submission)", async () => {
+  test("should handle the complete test lifecycle sequentially (one-by-one)", async () => {
     const payload = {
       topic_name: "Node.js Streams",
       questions: ["What is a Readable Stream?", "What does .pipe() do?"],
     };
 
+    // 1. Generate the fresh test
     const newTest = await generateNewTest(dbInstance, payload);
 
     assert.ok(newTest.test_id, "Should generate a valid test ID");
@@ -47,27 +48,58 @@ describe("Quiz Database Suite", () => {
     );
     assert.equal(newTest.questions[0].question, "What is a Readable Stream?");
 
-    const submissionPayload = {
+    // 2. Submit the answer to the first question and expect the NEXT question back
+    const step1 = await submitAnswer(dbInstance, {
       test_id: newTest.test_id,
-      answers: [
-        {
-          question_id: newTest.questions[0].id,
-          user_answer: "A stream you can read data from.",
-          is_correct: true,
-        },
-        {
-          question_id: newTest.questions[1].id,
-          user_answer: "It attaches a Writable stream to a Readable stream.",
-          is_correct: true,
-        },
-      ],
-    };
+      question_id: newTest.questions[0].id,
+      user_answer: "A stream you can read data from.",
+      is_correct: true,
+    });
 
-    const result = await submitTestAnswers(dbInstance, submissionPayload);
-    assert.deepEqual(
-      result,
-      { success: true },
-      "Submission should report success",
+    assert.equal(
+      step1.test_complete,
+      false,
+      "Test should not be complete after question 1",
+    );
+    assert.ok(step1.next_question, "Should return a next question object");
+    assert.equal(step1.next_question.id, newTest.questions[1].id);
+    assert.equal(step1.next_question.text, "What does .pipe() do?");
+
+    // 3. Submit the answer to the second (and final) question and expect completion
+    const step2 = await submitAnswer(dbInstance, {
+      test_id: newTest.test_id,
+      question_id: newTest.questions[1].id,
+      user_answer: "It attaches a Writable stream to a Readable stream.",
+      is_correct: true,
+    });
+
+    assert.equal(
+      step2.test_complete,
+      true,
+      "Test should signal completion after final question",
+    );
+    assert.equal(
+      step2.next_question,
+      null,
+      "Next question reference should be null upon completion",
+    );
+
+    // 4. Verify both rows were safely persisted in the test_answer table
+    const storedAnswers = await dbInstance
+      .selectFrom("test_answer")
+      .selectAll()
+      .where("test_id", "=", newTest.test_id)
+      .execute();
+
+    assert.equal(
+      storedAnswers.length,
+      2,
+      "Should have stored exactly 2 database rows",
+    );
+    assert.equal(storedAnswers[0].question_id, newTest.questions[0].id);
+    assert.equal(
+      storedAnswers[1].answer,
+      "It attaches a Writable stream to a Readable stream.",
     );
   });
 

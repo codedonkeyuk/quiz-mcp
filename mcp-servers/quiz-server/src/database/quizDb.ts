@@ -161,3 +161,80 @@ export async function submitTestAnswers(
 
   return { success: true };
 }
+
+export interface SingleAnswerPayload {
+  test_id: number;
+  question_id: number;
+  user_answer: string;
+  is_correct: boolean;
+}
+
+export async function submitAnswer(
+  db: Kysely<DbSchema>,
+  payload: SingleAnswerPayload,
+) {
+  return await db.transaction().execute(async (trx) => {
+    // 1. Turn on foreign key constraints for SQLite execution
+    await sql`PRAGMA foreign_keys = ON`.execute(trx);
+
+    // 2. Safely log the user's answer into the test_answer table
+    await trx
+      .insertInto("test_answer")
+      .values({
+        test_id: payload.test_id,
+        question_id: payload.question_id,
+        answer: payload.user_answer,
+        correct: (payload.is_correct ? 1 : 0) as unknown as boolean,
+      })
+      .execute();
+
+    // 3. Resolve the topic_id of the current test runner
+    const testRecord = await trx
+      .selectFrom("test")
+      .select("topic_id")
+      .where("id", "=", payload.test_id)
+      .executeTakeFirst();
+
+    if (!testRecord) {
+      throw new Error(
+        `Test lifecycle error: Test ID ${payload.test_id} does not exist.`,
+      );
+    }
+
+    // 4. Extract all valid questions tagged under this topic configuration
+    const allQuestions = await trx
+      .selectFrom("question")
+      .select(["id", "question"])
+      .where("topic_id", "=", testRecord.topic_id)
+      .orderBy("id", "asc")
+      .execute();
+
+    // 5. Audit all question IDs already answered under this specific test instance
+    const answeredRows = await trx
+      .selectFrom("test_answer")
+      .select("question_id")
+      .where("test_id", "=", payload.test_id)
+      .execute();
+
+    const answeredIds = new Set(answeredRows.map((row) => row.question_id));
+
+    // 6. Locate the first unanswered question instance
+    const nextQuestion = allQuestions.find((q) => !answeredIds.has(q.id));
+
+    if (nextQuestion) {
+      return {
+        test_complete: false,
+        next_question: {
+          id: nextQuestion.id,
+          text: nextQuestion.question,
+        },
+      };
+    }
+
+    // No questions left matching this test configuration -> Done!
+    return {
+      test_complete: true,
+      next_question: null,
+    };
+  });
+}

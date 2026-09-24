@@ -31,10 +31,9 @@ export const generateNewTestTool = {
 
         return JSON.stringify({
           message:
-            "Test created successfully. Please present these questions to the user.",
+            "Test created successfully. I will now present the questions one by one.",
           test_id: result.test_id,
           topic_id: result.topic_id,
-          questions: result.questions,
         });
       } catch (error: any) {
         return JSON.stringify({

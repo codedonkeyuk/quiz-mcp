@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { generateNewTestTool } from "./tools/generateNewTest.ts";
-import { submitTestAnswersTool } from "./tools/submitTestAnswers.ts";
+import { submitTestAnswerTool } from "./tools/submitTestAnswerTool.ts";
 import { createTopicTool } from "./tools/createTopic.ts";
 import { deleteTopicTool } from "./tools/deleteTopic.ts";
 
@@ -39,13 +39,13 @@ export default function registerQuiz(server: McpServer) {
   );
 
   server.registerTool(
-    submitTestAnswersTool.name,
+    submitTestAnswerTool.name,
     {
-      description: submitTestAnswersTool.description,
-      inputSchema: submitTestAnswersTool.schema,
+      description: submitTestAnswerTool.description,
+      inputSchema: submitTestAnswerTool.schema,
     },
     async (args) => {
-      return await submitTestAnswersTool.execute(args);
+      return await submitTestAnswerTool.execute(args);
     },
   );
 

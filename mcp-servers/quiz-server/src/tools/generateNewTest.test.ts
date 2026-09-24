@@ -42,8 +42,6 @@ test("generateNewTestTool.execute", async (t) => {
     assert.match(result.message, /Test created successfully/);
     assert.strictEqual(result.test_id, "test-abc-123");
     assert.strictEqual(result.topic_id, "topic-xyz-789");
-    assert.strictEqual(result.questions.length, 2);
-    assert.strictEqual(result.questions[0].text, "What is a structural type?");
   });
 
   await t.test("handles errors gracefully when generation fails", async () => {

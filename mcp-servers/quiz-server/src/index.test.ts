@@ -37,10 +37,11 @@ test("registerQuiz registration pipeline", async (t) => {
     },
   });
 
-  mock.module("./tools/submitTestAnswers.ts", {
+  // --- Updated path and variable name to match your new tool file ---
+  mock.module("./tools/submitTestAnswerTool.ts", {
     namedExports: {
-      submitTestAnswersTool: {
-        name: "submit-test-answers",
+      submitTestAnswerTool: {
+        name: "submit-test-answer",
         description: "mocked description",
         schema: z.object({ test_id: z.number() }),
         execute: async () => {},
@@ -78,7 +79,7 @@ test("registerQuiz registration pipeline", async (t) => {
       assert.ok(toolNames.includes("create-topic"));
       assert.ok(toolNames.includes("delete-topic"));
       assert.ok(toolNames.includes("generate-new-test"));
-      assert.ok(toolNames.includes("submit-test-answers"));
+      assert.ok(toolNames.includes("submit-test-answer")); // <-- Updated name assertion
     },
   );
 });
