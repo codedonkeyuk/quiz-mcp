@@ -36,7 +36,7 @@ export const submitTestAnswerTool = {
             content: [
               {
                 type: "text",
-                text: `You have completed the quiz!\n\nFinal Scorecard:\n- Correct Answers: ${score.correct} / ${score.total}\n- Score: ${score.percentage}%\n\nShow the score tot he user and provide a brief summary review of their performance now.`,
+                text: `You have completed the quiz!\n\nFinal Scorecard:\n- Correct Answers: ${score.correct} / ${score.total}\n- Score: ${score.percentage}%\n\nShow the score total he user and provide a brief summary review of their performance now.`,
               },
             ],
           };
