@@ -29,12 +29,18 @@ test("submitTestAnswerTool.execute", async (t) => {
               id: 2,
               text: "What does .pipe() do?",
             },
+            score: null,
           };
         }
 
         return {
           test_complete: true,
           next_question: null,
+          score: {
+            total: 2,
+            correct: 1,
+            percentage: 50,
+          },
         };
       },
     },
@@ -54,15 +60,15 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const mcpResponse = await submitTestAnswerTool.execute(inputPayload);
 
+      // Accessing index 0 of the content array inside the wrapExecution output payload
       const textOutput = mcpResponse.content[0].text;
 
-      // Updated to match the prefix-free raw question string format
       assert.match(textOutput, /What does \.pipe\(\) do\?/);
     },
   );
 
   await t.test(
-    "successfully records final answer and signals test completion",
+    "successfully records final answer and signals test completion with scorecard metrics",
     async () => {
       const inputPayload = {
         test_id: 101,
@@ -75,9 +81,10 @@ test("submitTestAnswerTool.execute", async (t) => {
 
       const textOutput = mcpResponse.content[0].text;
 
-      // Updated to match the new final step text string layout
-      assert.match(textOutput, /Test complete/);
-      assert.match(textOutput, /Summarise the results/);
+      assert.match(textOutput, /You have completed the quiz!/);
+      assert.match(textOutput, /Final Scorecard:/);
+      assert.match(textOutput, /Correct Answers: 1 \/ 2/);
+      assert.match(textOutput, /Score: 50%/);
     },
   );
 

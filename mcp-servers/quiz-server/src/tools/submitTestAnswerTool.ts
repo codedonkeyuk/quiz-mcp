@@ -3,28 +3,16 @@ import { wrapExecution } from "@mcp-packages/common";
 import { quizDb, submitAnswer } from "../database/quizDb.ts";
 
 const answerSchema = z.object({
-  test_id: z
-    .number()
-    .describe("The unique database ID of the active test being taken"),
-  question_id: z
-    .number()
-    .describe(
-      "The specific database ID of the current single question being answered",
-    ),
-  user_answer: z
-    .string()
-    .describe("The direct, raw plain text response provided by the human user"),
-  is_correct: z
-    .boolean()
-    .describe(
-      "Whether the user's answer was graded as correct or incorrect against your internal key",
-    ),
+  test_id: z.number(),
+  question_id: z.number(),
+  user_answer: z.string(),
+  is_correct: z.boolean(),
 });
 
 export const submitTestAnswerTool = {
   name: "submit-test-answer",
   description:
-    "Submits the user's answer for a single question. CRITICAL RULES: Do NOT tell the user if they got the answer right or wrong. Do NOT say 'That is correct!' or 'Here is the next question:'. Simply output the raw next question text returned by the tool with zero added conversational fluff.",
+    "Submits the user's answer for a single question. Instantly returns the next question text, or presents the final scorecard if the quiz is completed.",
   schema: answerSchema,
 
   execute: wrapExecution<z.infer<typeof answerSchema>>(
@@ -40,19 +28,21 @@ export const submitTestAnswerTool = {
           is_correct,
         });
 
-        // If test is complete, return standard payload markers to break loop natively
+        // If the test has ended, immediately render the calculation block results
         if (result.test_complete || !result.next_question) {
+          const score = result.score || { correct: 0, total: 0, percentage: 0 };
+
           return {
             content: [
               {
                 type: "text",
-                text: "Test complete. Summarise the results and calculate the final score for the user now.",
+                text: `You have completed the quiz!\n\nFinal Scorecard:\n- Correct Answers: ${score.correct} / ${score.total}\n- Score: ${score.percentage}%\n\nProvide a brief summary review of their performance now.`,
               },
             ],
           };
         }
 
-        // Return clean plaintext question string without custom system command brackets
+        // Otherwise continue the loop silently
         return {
           content: [
             {
@@ -66,7 +56,7 @@ export const submitTestAnswerTool = {
           content: [
             {
               type: "text",
-              text: `Error processing answer submission: ${error.message || "Unknown execution error"}`,
+              text: `Error processing answer submission: ${error.message || "Unknown error"}`,
             },
           ],
         };

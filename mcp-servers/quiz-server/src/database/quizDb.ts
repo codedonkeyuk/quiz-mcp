@@ -174,10 +174,9 @@ export async function submitAnswer(
   payload: SingleAnswerPayload,
 ) {
   return await db.transaction().execute(async (trx) => {
-    // 1. Turn on foreign key constraints for SQLite execution
     await sql`PRAGMA foreign_keys = ON`.execute(trx);
 
-    // 2. Safely log the user's answer into the test_answer table
+    // 1. Insert the current single answer row
     await trx
       .insertInto("test_answer")
       .values({
@@ -188,7 +187,7 @@ export async function submitAnswer(
       })
       .execute();
 
-    // 3. Resolve the topic_id of the current test runner
+    // 2. Resolve the topic layout configuration
     const testRecord = await trx
       .selectFrom("test")
       .select("topic_id")
@@ -196,12 +195,9 @@ export async function submitAnswer(
       .executeTakeFirst();
 
     if (!testRecord) {
-      throw new Error(
-        `Test lifecycle error: Test ID ${payload.test_id} does not exist.`,
-      );
+      throw new Error(`Test ID ${payload.test_id} not found.`);
     }
 
-    // 4. Extract all valid questions tagged under this topic configuration
     const allQuestions = await trx
       .selectFrom("question")
       .select(["id", "question"])
@@ -209,7 +205,6 @@ export async function submitAnswer(
       .orderBy("id", "asc")
       .execute();
 
-    // 5. Audit all question IDs already answered under this specific test instance
     const answeredRows = await trx
       .selectFrom("test_answer")
       .select("question_id")
@@ -218,7 +213,7 @@ export async function submitAnswer(
 
     const answeredIds = new Set(answeredRows.map((row) => row.question_id));
 
-    // 6. Locate the first unanswered question instance
+    // 3. Find if another question remains
     const nextQuestion = allQuestions.find((q) => !answeredIds.has(q.id));
 
     if (nextQuestion) {
@@ -228,13 +223,37 @@ export async function submitAnswer(
           id: nextQuestion.id,
           text: nextQuestion.question,
         },
+        score: null, // Quiz ongoing
       };
     }
 
-    // No questions left matching this test configuration -> Done!
+    // 4. TEST COMPLETE: Calculate the scorecard results right here!
+    const gradingSummary = await trx
+      .selectFrom("test_answer")
+      .select([
+        trx.fn.count("id").as("total"),
+        // Sum up rows where correct is true (1)
+        trx.fn
+          .sum(sql`CASE WHEN correct = 1 THEN 1 ELSE 0 END`)
+          .as("correct_count"),
+      ])
+      .where("test_id", "=", payload.test_id)
+      .executeTakeFirst();
+
+    const totalQuestions = Number(gradingSummary?.total || allQuestions.length);
+    const correctQuestions = Number(gradingSummary?.correct_count || 0);
+
     return {
       test_complete: true,
       next_question: null,
+      score: {
+        total: totalQuestions,
+        correct: correctQuestions,
+        percentage:
+          totalQuestions > 0
+            ? Math.round((correctQuestions / totalQuestions) * 100)
+            : 0,
+      },
     };
   });
 }

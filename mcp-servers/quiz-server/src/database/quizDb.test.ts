@@ -65,7 +65,7 @@ describe("Quiz Database Suite", () => {
     assert.equal(step1.next_question.id, newTest.questions[1].id);
     assert.equal(step1.next_question.text, "What does .pipe() do?");
 
-    // 3. Submit the answer to the second (and final) question and expect completion
+    // 3. Submit the answer to the second (and final) question and expect completion + scorecard
     const step2 = await submitAnswer(dbInstance, {
       test_id: newTest.test_id,
       question_id: newTest.questions[1].id,
@@ -82,6 +82,24 @@ describe("Quiz Database Suite", () => {
       step2.next_question,
       null,
       "Next question reference should be null upon completion",
+    );
+
+    // Assertions against the embedded database scorecard calculation
+    assert.ok(step2.score, "Final step should return a score tracking block");
+    assert.equal(
+      step2.score.total,
+      2,
+      "Total questions tracked should equal 2",
+    );
+    assert.equal(
+      step2.score.correct,
+      2,
+      "Correct answer count should evaluate to 2",
+    );
+    assert.equal(
+      step2.score.percentage,
+      100,
+      "Calculated score should equal 100%",
     );
 
     // 4. Verify both rows were safely persisted in the test_answer table
