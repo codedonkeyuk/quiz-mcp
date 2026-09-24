@@ -1,0 +1,26 @@
+name: Deploy Quiz MCP
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: debian-stable
+    steps:
+      - name: Check out complete application
+        uses: actions/checkout@v4
+
+      - name: Sync files to runner apps folder and restart
+        run: |
+          # 1. Create the project sub-folder automatically if it doesn't exist
+          mkdir -p ~/gitea-runner-apps/quiz-mcp
+
+          # 2. Copy the entire checked-out repository over
+          cp -R ./* ~/gitea-runner-apps/quiz-mcp/
+
+          # 3. Move into the folder
+          cd ~/gitea-runner-apps/quiz-mcp/
+
+          # 4. Restart the container so it runs the new code
+          docker compose up -d --force-recreate
