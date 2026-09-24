@@ -1,4 +1,4 @@
-name: Deploy Quiz MCP
+name: Continuous Deployment
 on:
   push:
     branches:
@@ -14,17 +14,13 @@ jobs:
 
       - name: Sync and Deploy Docker App
         run: |
-          # Create your centralized workspace folder for this specific app
-          mkdir -p ~/apps/quiz-mcp
+          # 1. Grab the exact repo name dynamically (e.g. "quiz-mcp", "main-site")
+          REPO_NAME="${{ github.event.repository.name }}"
 
-          # Safely copy the repository files into the app directory
-          rsync -avz --delete ./ ~/apps/quiz-mcp/
+          # 2. Dynamically create and sync files to that specific folder
+          mkdir -p ~/apps/$REPO_NAME
+          rsync -avz --delete ./ ~/apps/$REPO_NAME/
 
-          # Navigate into the workspace and launch your docker apps
-          cd ~/apps/quiz-mcp
-
-          # Run npm install on the host so node_modules exists before the container boots!
-          npm install
-
-          # Launch the containers
+          # 3. Step inside and fire up the containers natively
+          cd ~/apps/$REPO_NAME
           docker compose up -d --build --force-recreate
