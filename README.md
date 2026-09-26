@@ -38,5 +38,3 @@ Simple run it and it should be accessibly to your LLM. SOme LLM have their own u
 | `npm run clean`    | clean project using prettier                                               |
 | `npm run validate` | validate code using typescript compiler. Does not generate files           |
 | `npm run serve`    | serve MCP locally                                                          |
-
-Testing push
