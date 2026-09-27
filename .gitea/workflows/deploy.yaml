@@ -1,0 +1,45 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Sync and Deploy Docker App
+    runs-on: blackbox-runner
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sync and Deploy Docker App
+        run: |
+          # 1. Safe abort for non-Docker projects
+          if [ ! -f docker-compose.yml ] && [ ! -f docker-compose.yaml ]; then
+            echo "No Docker Compose configuration found. Skipping deployment cleanly."
+            exit 0
+          fi
+
+          # 2. Setup workspace directory
+          REPO_NAME="${{ github.event.repository.name }}"
+          mkdir -p ~/apps/$REPO_NAME
+          rsync -avz --delete ./ ~/apps/$REPO_NAME/
+          cd ~/apps/$REPO_NAME
+
+          if [ -f package.json ]; then
+            npm install
+          fi
+
+          # 3. TARGETED SECRET INJECTION VIA DYNAMIC RUNTIME .ENV
+          # Instead of fragile exports, we write directly to the local directory where docker compose looks.
+          # Since rsync runs BEFORE this step, this file won't be wiped by syncs.
+          if grep -q "ZIGGY_JWT_SECRET" docker-compose.y*ml 2>/dev/null; then
+            echo "Target requires Ziggy keys. Injecting runtime variables into local configuration..."
+            echo "ZIGGY_JWT_SECRET=$ZIGGY_JWT_SECRET" > .env
+            echo "ZIGGY_JWT_REFRESH_SECRET=$ZIGGY_JWT_REFRESH_SECRET" >> .env
+          fi
+
+          # 4. FORCE-CLEAN RESET WITHOUT WIPING VOLUMES
+          # Notice there is ABSOLUTELY NO '-v' flag here. Your data is 100% safe.
+          docker compose down --remove-orphans
+          docker compose up -d --build --force-recreate
