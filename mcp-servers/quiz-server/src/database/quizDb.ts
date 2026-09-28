@@ -2,7 +2,7 @@ import { Kysely, sql } from "kysely";
 import type { DbSchema } from "./types.ts";
 import { db, type DecoratedSchemaBuilder } from "@mcp-packages/database";
 
-export const quizDb = async (database: string = "/app/data/quiz.sqlite") =>
+export const quizDb = async (database: string = "/data/quiz.sqlite") =>
   await db<DbSchema>(
     database,
     async (schema: DecoratedSchemaBuilder<DbSchema>) => {
