@@ -6,7 +6,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app:ro
-      - quiz_tools_data:/data
+      - quiz_tools_data:/app/data
     command: ["node", "src/index.ts"]
     networks:
       - mcp_network
