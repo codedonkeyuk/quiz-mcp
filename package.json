@@ -1,6 +1,6 @@
 {
   "name": "quiz-mcp",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "A MCP that will help you quiz your knowledge on selected topics",
   "license": "MIT",
   "author": "Leigh",
@@ -12,8 +12,8 @@
     "mcp-servers/*"
   ],
   "scripts": {
-    "clean": "npx prettier . --write",
-    "validate": "npx prettier . --check && tsc --noEmit && npx cspell \"**/*README*.md\"",
+    "clean": "npx prettier . --write && npx oxlint --type-aware --fix",
+    "validate": "npx prettier . --check && npx oxlint --type-aware  && tsc --noEmit && npx cspell \"**/*README*.md\"",
     "serve": "node src/index.ts",
     "test": "npm test --workspaces --if-present && node --experimental-strip-types --experimental-test-module-mocks --test \"src/**/*.test.ts\"",
     "prepare": "husky"
@@ -23,6 +23,8 @@
     "@types/node": "^26.1.1",
     "cspell": "^10.0.1",
     "husky": "^9.1.7",
+    "oxlint": "^1.88.0",
+    "oxlint-tsgolint": "^7.0.2004",
     "prettier": "3.9.5",
     "typescript": "^7.0.2"
   },

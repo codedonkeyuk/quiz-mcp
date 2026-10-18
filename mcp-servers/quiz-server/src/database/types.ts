@@ -9,6 +9,8 @@ interface Test {
   id: Generated<number>;
   topic_id: number;
   date: string;
+  number_questions: number;
+  grade?: number;
 }
 
 interface TestAnswer {
@@ -16,13 +18,14 @@ interface TestAnswer {
   test_id: number;
   question_id: number;
   answer: string;
-  correct: boolean;
+  correct?: boolean;
 }
 
 interface Question {
   id: Generated<number>;
   topic_id: number;
   question: string;
+  correct_answer: string;
 }
 
 export interface DbSchema {

@@ -2,156 +2,186 @@ import { test, before, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
   quizDb,
-  createTopic,
-  deleteTopic,
-  generateNewTest,
+  createTestKnowledge,
+  createTest,
   submitAnswer,
+  saveTestGrade,
 } from "./quizDb.ts";
 
-describe("Quiz Database Suite", () => {
+describe("Quiz System End-to-End Lifecycle", () => {
   let dbInstance: any;
 
   before(async () => {
     dbInstance = await quizDb(":memory:");
   });
 
-  test("should successfully create a new topic with a unique name", async () => {
-    const topic = await createTopic(dbInstance, "TypeScript Basics");
-
-    assert.ok(topic.id, "Topic should have a generated ID");
-    assert.equal(topic.name, "TypeScript Basics");
-  });
-
-  test("should fail to create a topic with a duplicate name", async () => {
-    await createTopic(dbInstance, "Unique Topic");
-
-    await assert.rejects(async () => {
-      await createTopic(dbInstance, "Unique Topic");
-    }, /A topic with the name "Unique Topic" already exists\./);
-  });
-
-  test("should handle the complete test lifecycle sequentially (one-by-one)", async () => {
-    const payload = {
-      topic_name: "Node.js Streams",
-      questions: ["What is a Readable Stream?", "What does .pipe() do?"],
+  test("should execute the complete lifecycle: creation, answering loop, and external LLM grading", async () => {
+    const mockTopicData = {
+      name: "TypeScript Generics",
+      questions: [
+        {
+          question: "What does <T> represent in a function definition?",
+          correct_answer: "A generic type placeholder parameter.",
+        },
+        {
+          question:
+            "How do you constrain a generic type to a specific structure?",
+          correct_answer: "Using the extends keyword.",
+        },
+      ],
     };
 
-    // 1. Generate the fresh test
-    const newTest = await generateNewTest(dbInstance, payload);
+    await createTestKnowledge(dbInstance, mockTopicData);
 
-    assert.ok(newTest.test_id, "Should generate a valid test ID");
-    assert.ok(newTest.topic_id, "Should look up or generate a topic ID");
-    assert.equal(
-      newTest.questions.length,
-      2,
-      "Should create exactly two questions",
+    const storedTopic = await dbInstance
+      .selectFrom("topic")
+      .where("name", "=", "TypeScript Generics")
+      .select("id")
+      .executeTakeFirstOrThrow();
+
+    assert.ok(storedTopic.id, "Topic should be written to the database");
+
+    const testSession = await createTest(dbInstance, "TypeScript Generics", 2);
+
+    assert.ok(
+      testSession.testId,
+      "Should generate a valid test configuration instance",
     );
-    assert.equal(newTest.questions[0].question, "What is a Readable Stream?");
+    assert.ok(
+      testSession.questionId,
+      "Should provide an initial question ID to display",
+    );
+    assert.ok(
+      testSession.question,
+      "Should yield the text of the first question",
+    );
 
-    // 2. Submit the answer to the first question and expect the NEXT question back
-    const step1 = await submitAnswer(dbInstance, {
-      test_id: newTest.test_id,
-      question_id: newTest.questions[0].id,
-      user_answer: "A stream you can read data from.",
-      is_correct: true,
+    const firstQuestionId = testSession.questionId;
+
+    const round1Result = await submitAnswer(dbInstance, {
+      testId: testSession.testId,
+      questionId: firstQuestionId,
+      answer: "It is a placeholder for a type passed at runtime.",
     });
 
     assert.equal(
-      step1.test_complete,
-      false,
-      "Test should not be complete after question 1",
+      round1Result.status,
+      "next_question",
+      "Should transition cleanly to the next question state",
     );
-    assert.ok(step1.next_question, "Should return a next question object");
-    assert.equal(step1.next_question.id, newTest.questions[1].id);
-    assert.equal(step1.next_question.text, "What does .pipe() do?");
+    assert.ok(
+      round1Result.nextQuestion,
+      "Should return the next question package",
+    );
+    assert.notEqual(
+      round1Result.nextQuestion.id,
+      firstQuestionId,
+      "Should deduplicate and pick the remaining question",
+    );
 
-    // 3. Submit the answer to the second (and final) question and expect completion + scorecard
-    const step2 = await submitAnswer(dbInstance, {
-      test_id: newTest.test_id,
-      question_id: newTest.questions[1].id,
-      user_answer: "It attaches a Writable stream to a Readable stream.",
-      is_correct: true,
+    const secondQuestionId = round1Result.nextQuestion.id;
+
+    const round2Result = await submitAnswer(dbInstance, {
+      testId: testSession.testId,
+      questionId: secondQuestionId,
+      answer: "By typing it out with the extends constraint parameter.",
     });
 
     assert.equal(
-      step2.test_complete,
-      true,
-      "Test should signal completion after final question",
-    );
-    assert.equal(
-      step2.next_question,
-      null,
-      "Next question reference should be null upon completion",
+      round2Result.status,
+      "completed",
+      "Should close the cycling loop when total question boundaries are satisfied",
     );
 
-    // Assertions against the embedded database scorecard calculation
-    assert.ok(step2.score, "Final step should return a score tracking block");
-    assert.equal(
-      step2.score.total,
-      2,
-      "Total questions tracked should equal 2",
-    );
-    assert.equal(
-      step2.score.correct,
-      2,
-      "Correct answer count should evaluate to 2",
-    );
-    assert.equal(
-      step2.score.percentage,
-      100,
-      "Calculated score should equal 100%",
+    assert.ok(
+      round2Result.evaluationPayload,
+      "Must bundle up full test history context blocks for immediate LLM processing",
     );
 
-    // 4. Verify both rows were safely persisted in the test_answer table
-    const storedAnswers = await dbInstance
+    assert.equal(
+      round2Result.evaluationPayload.length,
+      2,
+      "Evaluation payload must contain exactly 2 question tracking structures",
+    );
+
+    const firstPayloadItem = round2Result.evaluationPayload[0];
+    assert.ok(
+      firstPayloadItem.answer_id,
+      "Payload rows require reference entity IDs",
+    );
+    assert.ok(
+      firstPayloadItem.question,
+      "Payload rows require original prompt context text strings",
+    );
+    assert.ok(
+      firstPayloadItem.reference_answer,
+      "Payload rows must display verification answers",
+    );
+    assert.ok(
+      firstPayloadItem.user_answer,
+      "Payload rows must display recorded customer replies",
+    );
+
+    const match1 = round2Result.evaluationPayload.find(
+      (item) => item.question === mockTopicData.questions[0].question,
+    );
+    const match2 = round2Result.evaluationPayload.find(
+      (item) => item.question === mockTopicData.questions[1].question,
+    );
+
+    assert.ok(match1, "First answer must be found in payload");
+    assert.ok(match2, "Second answer must be found in payload");
+
+    const firstAnswerId = match1.answer_id;
+    const secondAnswerId = match2.answer_id;
+
+    const simulatedLlmFeedback = [
+      { answerId: firstAnswerId, correct: true },
+      { answerId: secondAnswerId, correct: false },
+    ];
+    const simulatedLlmGradeScore = 50;
+
+    await saveTestGrade(
+      dbInstance,
+      testSession.testId,
+      simulatedLlmGradeScore,
+      simulatedLlmFeedback,
+    );
+
+    const updatedTestRecord = await dbInstance
+      .selectFrom("test")
+      .where("id", "=", testSession.testId)
+      .select("grade")
+      .executeTakeFirstOrThrow();
+
+    assert.equal(
+      updatedTestRecord.grade,
+      50,
+      "The test row should now store the final grading metric submitted by the evaluation layer",
+    );
+
+    const updatedAnswers = await dbInstance
       .selectFrom("test_answer")
-      .selectAll()
-      .where("test_id", "=", newTest.test_id)
+      .where("test_id", "=", testSession.testId)
+      .select(["id", "correct"])
       .execute();
 
-    assert.equal(
-      storedAnswers.length,
-      2,
-      "Should have stored exactly 2 database rows",
+    const verifiedFirstAnswer = updatedAnswers.find(
+      (a: any) => a.id === firstAnswerId,
     );
-    assert.equal(storedAnswers[0].question_id, newTest.questions[0].id);
-    assert.equal(
-      storedAnswers[1].answer,
-      "It attaches a Writable stream to a Readable stream.",
+    const verifiedSecondAnswer = updatedAnswers.find(
+      (a: any) => a.id === secondAnswerId,
     );
-  });
-
-  test("should cascade delete all elements when a topic is dropped", async () => {
-    const topic = await createTopic(dbInstance, "Volatile Topic");
-
-    const newTest = await generateNewTest(dbInstance, {
-      topic_name: "Volatile Topic",
-      questions: ["Will this survive a cascade drop?"],
-    });
-
-    await deleteTopic(dbInstance, topic.id);
-
-    const testCheck = await dbInstance
-      .selectFrom("test")
-      .select(dbInstance.fn.count("id").as("count"))
-      .where("id", "=", newTest.test_id)
-      .executeTakeFirst();
-
-    const questionCheck = await dbInstance
-      .selectFrom("question")
-      .select(dbInstance.fn.count("id").as("count"))
-      .where("id", "=", newTest.questions[0].id)
-      .executeTakeFirst();
 
     assert.equal(
-      Number(testCheck?.count),
+      verifiedFirstAnswer.correct,
+      1,
+      "First question should be updated to true (1)",
+    );
+    assert.equal(
+      verifiedSecondAnswer.correct,
       0,
-      "Test records should be deleted by cascade execution",
-    );
-    assert.equal(
-      Number(questionCheck?.count),
-      0,
-      "Question records should be deleted by cascade execution",
+      "Second question should be updated to false (0)",
     );
   });
 });

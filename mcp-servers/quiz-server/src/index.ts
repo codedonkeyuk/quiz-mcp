@@ -1,51 +1,51 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { generateNewTestTool } from "./tools/generateNewTest.ts";
-import { submitTestAnswerTool } from "./tools/submitTestAnswerTool.ts";
-import { createTopicTool } from "./tools/createTopic.ts";
-import { deleteTopicTool } from "./tools/deleteTopic.ts";
+import { createTestKnowledgeTool } from "./tools/createTestKnowledgeTool.ts";
+import { createTestTool } from "./tools/createTestTool.ts";
+import { submitAnswerTool } from "./tools/submitAnswerTool.ts";
+import { saveTestGradeTool } from "./tools/saveTestGradeTool.ts";
 
 export default function registerQuiz(server: McpServer) {
   server.registerTool(
-    createTopicTool.name,
+    createTestKnowledgeTool.name,
     {
-      description: createTopicTool.description,
-      inputSchema: createTopicTool.schema,
+      description: createTestKnowledgeTool.description,
+      inputSchema: createTestKnowledgeTool.schema,
     },
     async (args) => {
-      return await createTopicTool.execute(args);
+      return await createTestKnowledgeTool.execute(args);
     },
   );
 
   server.registerTool(
-    deleteTopicTool.name,
+    createTestTool.name,
     {
-      description: deleteTopicTool.description,
-      inputSchema: deleteTopicTool.schema,
+      description: createTestTool.description,
+      inputSchema: createTestTool.schema,
     },
     async (args) => {
-      return await deleteTopicTool.execute(args);
+      return await createTestTool.execute(args);
     },
   );
 
   server.registerTool(
-    generateNewTestTool.name,
+    submitAnswerTool.name,
     {
-      description: generateNewTestTool.description,
-      inputSchema: generateNewTestTool.schema,
+      description: submitAnswerTool.description,
+      inputSchema: submitAnswerTool.schema,
     },
     async (args) => {
-      return await generateNewTestTool.execute(args);
+      return await submitAnswerTool.execute(args);
     },
   );
 
   server.registerTool(
-    submitTestAnswerTool.name,
+    saveTestGradeTool.name,
     {
-      description: submitTestAnswerTool.description,
-      inputSchema: submitTestAnswerTool.schema,
+      description: saveTestGradeTool.description,
+      inputSchema: saveTestGradeTool.schema,
     },
     async (args) => {
-      return await submitTestAnswerTool.execute(args);
+      return await saveTestGradeTool.execute(args);
     },
   );
 
