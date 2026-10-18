@@ -4,10 +4,10 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 test("registerQuiz registration pipeline", async (t) => {
-  mock.module("./tools/createTopic.ts", {
+  mock.module("./tools/createTestKnowledgeTool.ts", {
     namedExports: {
-      createTopicTool: {
-        name: "create-topic",
+      createTestKnowledgeTool: {
+        name: "create-test-knowledge",
         description: "mocked description",
         schema: z.object({ name: z.string() }),
         execute: async () => {},
@@ -15,21 +15,10 @@ test("registerQuiz registration pipeline", async (t) => {
     },
   });
 
-  mock.module("./tools/deleteTopic.ts", {
+  mock.module("./tools/createTestTool.ts", {
     namedExports: {
-      deleteTopicTool: {
-        name: "delete-topic",
-        description: "mocked description",
-        schema: z.object({ id: z.number() }),
-        execute: async () => {},
-      },
-    },
-  });
-
-  mock.module("./tools/generateNewTest.ts", {
-    namedExports: {
-      generateNewTestTool: {
-        name: "generate-new-test",
+      createTestTool: {
+        name: "create-test",
         description: "mocked description",
         schema: z.object({ topic_name: z.string() }),
         execute: async () => {},
@@ -37,11 +26,21 @@ test("registerQuiz registration pipeline", async (t) => {
     },
   });
 
-  // --- Updated path and variable name to match your new tool file ---
-  mock.module("./tools/submitTestAnswerTool.ts", {
+  mock.module("./tools/submitAnswerTool.ts", {
     namedExports: {
-      submitTestAnswerTool: {
-        name: "submit-test-answer",
+      submitAnswerTool: {
+        name: "submit-answer",
+        description: "mocked description",
+        schema: z.object({ test_id: z.number() }),
+        execute: async () => {},
+      },
+    },
+  });
+
+  mock.module("./tools/saveTestGradeTool.ts", {
+    namedExports: {
+      saveTestGradeTool: {
+        name: "save-test-grade",
         description: "mocked description",
         schema: z.object({ test_id: z.number() }),
         execute: async () => {},
@@ -76,10 +75,10 @@ test("registerQuiz registration pipeline", async (t) => {
       assert.strictEqual(registeredTools.length, 4);
 
       const toolNames = registeredTools.map((t) => t.name);
-      assert.ok(toolNames.includes("create-topic"));
-      assert.ok(toolNames.includes("delete-topic"));
-      assert.ok(toolNames.includes("generate-new-test"));
-      assert.ok(toolNames.includes("submit-test-answer")); // <-- Updated name assertion
+      assert.ok(toolNames.includes("create-test-knowledge"));
+      assert.ok(toolNames.includes("create-test"));
+      assert.ok(toolNames.includes("submit-answer"));
+      assert.ok(toolNames.includes("save-test-grade"));
     },
   );
 });
