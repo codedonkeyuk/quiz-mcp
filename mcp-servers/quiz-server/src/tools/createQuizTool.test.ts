@@ -3,12 +3,12 @@ import assert from "node:assert";
 import { Kysely } from "kysely";
 import { type DbSchema } from "../database/types.ts";
 
-test("createTestKnowledgeTool.execute", async (t) => {
+test("createQuizTool.execute", async (t) => {
   mock.module("../database/quizDb.ts", {
     defaultExport: async () => ({ isMockDb: true }),
   });
 
-  mock.module("../database/createTestKnowledge.ts", {
+  mock.module("../database/createQuiz.ts", {
     defaultExport: async (
       _db: Kysely<DbSchema>,
       payload: {
@@ -23,8 +23,8 @@ test("createTestKnowledgeTool.execute", async (t) => {
     },
   });
 
-  const { createTestKnowledgeTool } =
-    await import("./createTestKnowledgeTool.ts");
+  const { createQuizTool } =
+    await import("./createQuizTool.ts");
 
   await t.test(
     "successfully saves topic and questions to knowledge base",
@@ -43,7 +43,7 @@ test("createTestKnowledgeTool.execute", async (t) => {
         ],
       };
 
-      const mcpResponse = await createTestKnowledgeTool.execute(inputPayload);
+      const mcpResponse = await createQuizTool.execute(inputPayload);
       const result = JSON.parse(mcpResponse.content[0].text);
 
       assert.strictEqual(result.success, true);
@@ -59,7 +59,7 @@ test("createTestKnowledgeTool.execute", async (t) => {
         questions: [{ question: "Will this fail?", correct_answer: "Yes" }],
       };
 
-      const mcpResponse = await createTestKnowledgeTool.execute(inputPayload);
+      const mcpResponse = await createQuizTool.execute(inputPayload);
       const result = JSON.parse(mcpResponse.content[0].text);
 
       assert.strictEqual(result.success, false);

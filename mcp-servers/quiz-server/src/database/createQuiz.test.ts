@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import createTestKnowledge from "./createTestKnowledge.ts";
+import createTestKnowledge from "./createQuiz.ts";
 import quizDb from "./quizDb.ts";
 
 describe("createTestKnowledge", () => {

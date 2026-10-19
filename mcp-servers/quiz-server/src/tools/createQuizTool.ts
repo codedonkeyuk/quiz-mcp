@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
 import quizDb from "../database/quizDb.ts";
-import createTestKnowledge from "../database/createTestKnowledge.ts";
+import createQuiz from "../database/createQuiz.ts";
 
-const createTestKnowledgeSchema = z.object({
+const createQuizSchema = z.object({
   name: z
     .string()
     .describe(
@@ -25,19 +25,19 @@ const createTestKnowledgeSchema = z.object({
     ),
 });
 
-export const createTestKnowledgeTool = {
+export const createQuizTool = {
   name: "create-test-knowledge",
   description:
     "Inserts a new topic and its associated question-and-answer pairs into the knowledge base database.",
-  schema: createTestKnowledgeSchema,
+  schema: createQuizSchema,
 
-  execute: wrapExecution<z.infer<typeof createTestKnowledgeSchema>>(
+  execute: wrapExecution<z.infer<typeof createQuizSchema>>(
     "create-test-knowledge",
     async ({ name, questions }: any) => {
       try {
         const db = await quizDb();
 
-        await createTestKnowledge(db, { name, questions });
+        await createQuiz(db, { name, questions });
 
         return JSON.stringify({
           success: true,

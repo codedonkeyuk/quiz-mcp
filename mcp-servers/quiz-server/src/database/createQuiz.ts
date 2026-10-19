@@ -9,7 +9,7 @@ interface TopicWithQuestions {
   }[];
 }
 
-const createTestKnowledge = async (
+const createQuiz = async (
   db: Kysely<DbSchema>,
   data: TopicWithQuestions,
 ) => {
@@ -36,4 +36,4 @@ const createTestKnowledge = async (
     .execute();
 };
 
-export default createTestKnowledge;
+export default createQuiz;
