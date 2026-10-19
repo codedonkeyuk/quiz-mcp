@@ -25,30 +25,27 @@ test("createQuizTool.execute", async (t) => {
 
   const { createQuizTool } = await import("./createQuizTool.ts");
 
-  await t.test(
-    "successfully saves topic and questions to knowledge base",
-    async () => {
-      const inputPayload = {
-        name: "TypeScript Basics",
-        questions: [
-          {
-            question: "What is a structural type?",
-            correct_answer: "Type checking based on shape",
-          },
-          {
-            question: "Explain unknown vs any",
-            correct_answer: "unknown is type-safe; any turns off checking",
-          },
-        ],
-      };
+  await t.test("successfully saves topic and questions to quiz", async () => {
+    const inputPayload = {
+      name: "TypeScript Basics",
+      questions: [
+        {
+          question: "What is a structural type?",
+          correct_answer: "Type checking based on shape",
+        },
+        {
+          question: "Explain unknown vs any",
+          correct_answer: "unknown is type-safe; any turns off checking",
+        },
+      ],
+    };
 
-      const mcpResponse = await createQuizTool.execute(inputPayload);
-      const result = JSON.parse(mcpResponse.content[0].text);
+    const mcpResponse = await createQuizTool.execute(inputPayload);
+    const result = JSON.parse(mcpResponse.content[0].text);
 
-      assert.strictEqual(result.success, true);
-      assert.match(result.message, /added to the knowledge base successfully/);
-    },
-  );
+    assert.strictEqual(result.success, true);
+    assert.match(result.message, /added to the quiz successfully/);
+  });
 
   await t.test(
     "handles database errors gracefully when insertion fails",

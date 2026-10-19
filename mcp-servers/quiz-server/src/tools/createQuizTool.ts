@@ -7,7 +7,7 @@ const createQuizSchema = z.object({
   name: z
     .string()
     .describe(
-      "The name of the topic or subject matter to store in the knowledge base (e.g., 'TypeScript Basics').",
+      "The name of the topic or subject matter to store in the quiz (e.g., 'TypeScript').",
     ),
   questions: z
     .array(
@@ -41,15 +41,13 @@ export const createQuizTool = {
 
         return JSON.stringify({
           success: true,
-          message:
-            "Topic and questions added to the knowledge base successfully.",
+          message: "Topic and questions added to the quiz successfully.",
         });
       } catch (error: any) {
         return JSON.stringify({
           success: false,
           error:
-            error.message ||
-            "An unexpected error occurred while saving test knowledge.",
+            error.message || "An unexpected error occurred while saving quiz.",
         });
       }
     },
