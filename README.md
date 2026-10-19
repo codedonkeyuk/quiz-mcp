@@ -2,7 +2,7 @@
 
 LLMs are great at information retrieval and by extension generating unique quiz questions. This MCP library give LLMs the ability to save the tests and the results. This not only allows you to identify the weak points, it allows you to analyse the results over a long period of time.
 
-As a developer I am used to doing technical tests for interviews. Its never ending!! Something I have threatened to do for years was build a test platform for coders, not companies! Most test platforms charge hundreds of pounds for access, or would not make them accessible to job seekers. This caused a great deal of anxiety for developers, certainly within me. Well the AI gods made a great testing tool called a LLM. Only thing missing is long term memory and a way to track your results, I managed to build that in an afternoon and that is this project!
+As a developer I am used to doing technical tests for interviews. Its never ending!! Something I have threatened to do for years was build a test platform for coders, not companies! Most test platforms charge hundreds of pounds for access, or not make them accessible to job seekers. This caused a great deal of anxiety for developers, certainly within me. Well the AI gods made a great testing tool called a LLM. Only thing missing is long term memory and a way to track your results.
 
 ## Setup
 
