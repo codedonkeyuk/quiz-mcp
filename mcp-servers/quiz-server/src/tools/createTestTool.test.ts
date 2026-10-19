@@ -5,25 +5,26 @@ import { type DbSchema } from "../database/types.ts";
 
 test("createTestTool.execute", async (t) => {
   mock.module("../database/quizDb.ts", {
-    namedExports: {
-      quizDb: async () => ({ isMockDb: true }),
-      createTest: async (
-        _db: Kysely<DbSchema>,
-        topicName: string,
-        _numberOfQuestions: number,
-      ) => {
-        if (topicName === "Trigger Error") {
-          throw new Error(
-            "Not enough questions available for the specified topic.",
-          );
-        }
+    defaultExport: async () => ({ isMockDb: true }),
+  });
 
-        return {
-          question: "What is a structural type?",
-          questionId: 45,
-          testId: 101,
-        };
-      },
+  mock.module("../database/createTest.ts", {
+    defaultExport: async (
+      _db: Kysely<DbSchema>,
+      topicName: string,
+      _numberOfQuestions: number,
+    ) => {
+      if (topicName === "Trigger Error") {
+        throw new Error(
+          "Not enough questions available for the specified topic.",
+        );
+      }
+
+      return {
+        question: "What is a structural type?",
+        questionId: 45,
+        testId: 101,
+      };
     },
   });
 

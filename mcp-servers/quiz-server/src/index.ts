@@ -1,18 +1,18 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { createTestKnowledgeTool } from "./tools/createTestKnowledgeTool.ts";
+import { createQuizTool } from "./tools/createQuizTool.ts";
 import { createTestTool } from "./tools/createTestTool.ts";
 import { submitAnswerTool } from "./tools/submitAnswerTool.ts";
 import { saveTestGradeTool } from "./tools/saveTestGradeTool.ts";
 
 export default function registerQuiz(server: McpServer) {
   server.registerTool(
-    createTestKnowledgeTool.name,
+    createQuizTool.name,
     {
-      description: createTestKnowledgeTool.description,
-      inputSchema: createTestKnowledgeTool.schema,
+      description: createQuizTool.description,
+      inputSchema: createQuizTool.schema,
     },
     async (args) => {
-      return await createTestKnowledgeTool.execute(args);
+      return await createQuizTool.execute(args);
     },
   );
 

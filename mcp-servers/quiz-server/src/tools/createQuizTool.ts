@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { createTestKnowledge, quizDb } from "../database/quizDb.ts";
+import quizDb from "../database/quizDb.ts";
+import createQuiz from "../database/createQuiz.ts";
 
-const createTestKnowledgeSchema = z.object({
+const createQuizSchema = z.object({
   name: z
     .string()
     .describe(
-      "The name of the topic or subject matter to store in the knowledge base (e.g., 'TypeScript Basics').",
+      "The name of the topic or subject matter to store in the quiz (e.g., 'TypeScript').",
     ),
   questions: z
     .array(
@@ -24,31 +25,29 @@ const createTestKnowledgeSchema = z.object({
     ),
 });
 
-export const createTestKnowledgeTool = {
+export const createQuizTool = {
   name: "create-test-knowledge",
   description:
     "Inserts a new topic and its associated question-and-answer pairs into the knowledge base database.",
-  schema: createTestKnowledgeSchema,
+  schema: createQuizSchema,
 
-  execute: wrapExecution<z.infer<typeof createTestKnowledgeSchema>>(
+  execute: wrapExecution<z.infer<typeof createQuizSchema>>(
     "create-test-knowledge",
     async ({ name, questions }: any) => {
       try {
         const db = await quizDb();
 
-        await createTestKnowledge(db, { name, questions });
+        await createQuiz(db, { name, questions });
 
         return JSON.stringify({
           success: true,
-          message:
-            "Topic and questions added to the knowledge base successfully.",
+          message: "Topic and questions added to the quiz successfully.",
         });
       } catch (error: any) {
         return JSON.stringify({
           success: false,
           error:
-            error.message ||
-            "An unexpected error occurred while saving test knowledge.",
+            error.message || "An unexpected error occurred while saving quiz.",
         });
       }
     },

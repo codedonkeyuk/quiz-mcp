@@ -4,9 +4,9 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 test("registerQuiz registration pipeline", async (t) => {
-  mock.module("./tools/createTestKnowledgeTool.ts", {
+  mock.module("./tools/createQuizTool.ts", {
     namedExports: {
-      createTestKnowledgeTool: {
+      createQuizTool: {
         name: "create-test-knowledge",
         description: "mocked description",
         schema: z.object({ name: z.string() }),
