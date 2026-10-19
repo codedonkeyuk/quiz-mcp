@@ -23,8 +23,7 @@ test("createQuizTool.execute", async (t) => {
     },
   });
 
-  const { createQuizTool } =
-    await import("./createQuizTool.ts");
+  const { createQuizTool } = await import("./createQuizTool.ts");
 
   await t.test(
     "successfully saves topic and questions to knowledge base",

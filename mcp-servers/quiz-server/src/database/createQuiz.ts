@@ -9,10 +9,7 @@ interface TopicWithQuestions {
   }[];
 }
 
-const createQuiz = async (
-  db: Kysely<DbSchema>,
-  data: TopicWithQuestions,
-) => {
+const createQuiz = async (db: Kysely<DbSchema>, data: TopicWithQuestions) => {
   const topicInsertResult = await db
     .insertInto("topic")
     .values({ name: data.name })
