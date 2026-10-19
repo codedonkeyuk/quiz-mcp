@@ -26,8 +26,6 @@ networks:
 ...
 ```
 
-Simple run it and it should be accessibly to your LLM. SOme LLM have their own unique config. You will need to use their instructions, too many clients!
-
 ## Commands
 
 | code               | description                                                                |
