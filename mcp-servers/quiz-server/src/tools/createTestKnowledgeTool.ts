@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { createTestKnowledge, quizDb } from "../database/quizDb.ts";
+import quizDb from "../database/quizDb.ts";
+import createTestKnowledge from "../database/createTestKnowledge.ts";
 
 const createTestKnowledgeSchema = z.object({
   name: z

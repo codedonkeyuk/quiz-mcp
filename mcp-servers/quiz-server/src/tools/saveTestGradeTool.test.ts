@@ -5,19 +5,20 @@ import { type DbSchema } from "../database/types.ts";
 
 test("saveTestGradeTool.execute", async (t) => {
   mock.module("../database/quizDb.ts", {
-    namedExports: {
-      quizDb: async () => ({ isMockDb: true }),
-      saveTestGrade: async (
-        _db: Kysely<DbSchema>,
-        testId: number,
-        _finalGrade: number,
-        _answersFeedback: { answerId: number; correct: boolean }[],
-      ) => {
-        if (testId === 999) {
-          throw new Error("Failed to update test metrics repository.");
-        }
-        return;
-      },
+    defaultExport: async () => ({ isMockDb: true }),
+  });
+
+  mock.module("../database/saveTestGrade.ts", {
+    defaultExport: async (
+      _db: Kysely<DbSchema>,
+      testId: number,
+      _finalGrade: number,
+      _answersFeedback: { answerId: number; correct: boolean }[],
+    ) => {
+      if (testId === 999) {
+        throw new Error("Failed to update test metrics repository.");
+      }
+      return;
     },
   });
 

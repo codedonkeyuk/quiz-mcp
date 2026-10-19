@@ -5,20 +5,21 @@ import { type DbSchema } from "../database/types.ts";
 
 test("createTestKnowledgeTool.execute", async (t) => {
   mock.module("../database/quizDb.ts", {
-    namedExports: {
-      quizDb: async () => ({ isMockDb: true }),
-      createTestKnowledge: async (
-        _db: Kysely<DbSchema>,
-        payload: {
-          name: string;
-          questions: { question: string; correct_answer: string }[];
-        },
-      ) => {
-        if (payload.name === "Trigger Error") {
-          throw new Error("Failed to insert topic.");
-        }
-        return;
+    defaultExport: async () => ({ isMockDb: true }),
+  });
+
+  mock.module("../database/createTestKnowledge.ts", {
+    defaultExport: async (
+      _db: Kysely<DbSchema>,
+      payload: {
+        name: string;
+        questions: { question: string; correct_answer: string }[];
       },
+    ) => {
+      if (payload.name === "Trigger Error") {
+        throw new Error("Failed to insert topic.");
+      }
+      return;
     },
   });
 

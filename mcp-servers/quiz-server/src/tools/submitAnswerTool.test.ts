@@ -5,40 +5,41 @@ import { type DbSchema } from "../database/types.ts";
 
 test("submitAnswerTool.execute", async (t) => {
   mock.module("../database/quizDb.ts", {
-    namedExports: {
-      quizDb: async () => ({ isMockDb: true }),
-      submitAnswer: async (
-        _db: Kysely<DbSchema>,
-        params: { testId: number; questionId: number; answer: string },
-      ) => {
-        if (params.testId === 999) {
-          throw new Error(
-            "No remaining unanswered questions left for this topic.",
-          );
-        }
+    defaultExport: async () => ({ isMockDb: true }),
+  });
 
-        if (params.testId === 200) {
-          return {
-            status: "completed" as const,
-            evaluationPayload: [
-              {
-                answer_id: 1,
-                question: "What is a structural type?",
-                reference_answer: "Type checking based on shape",
-                user_answer: params.answer,
-              },
-            ],
-          };
-        }
+  mock.module("../database/submitAnswer.ts", {
+    defaultExport: async (
+      _db: Kysely<DbSchema>,
+      params: { testId: number; questionId: number; answer: string },
+    ) => {
+      if (params.testId === 999) {
+        throw new Error(
+          "No remaining unanswered questions left for this topic.",
+        );
+      }
 
+      if (params.testId === 200) {
         return {
-          status: "next_question" as const,
-          nextQuestion: {
-            id: 46,
-            question: "Explain unknown vs any",
-          },
+          status: "completed" as const,
+          evaluationPayload: [
+            {
+              answer_id: 1,
+              question: "What is a structural type?",
+              reference_answer: "Type checking based on shape",
+              user_answer: params.answer,
+            },
+          ],
         };
-      },
+      }
+
+      return {
+        status: "next_question" as const,
+        nextQuestion: {
+          id: 46,
+          question: "Explain unknown vs any",
+        },
+      };
     },
   });
 

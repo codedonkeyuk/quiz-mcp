@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { saveTestGrade, quizDb } from "../database/quizDb.ts";
+import quizDb from "../database/quizDb.ts";
+import saveTestGrade from "../database/saveTestGrade.ts";
 
 const saveTestGradeSchema = z.object({
   test_id: z

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { wrapExecution } from "@mcp-packages/common";
-import { submitAnswer, quizDb } from "../database/quizDb.ts";
+import quizDb from "../database/quizDb.ts";
+import submitAnswer from "../database/submitAnswer.ts";
 
 const submitAnswerSchema = z.object({
   test_id: z
